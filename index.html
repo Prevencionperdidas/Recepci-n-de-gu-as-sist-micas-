@@ -1,0 +1,2202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <meta name="theme-color" content="#0058A3" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Control de Guías" />
+  <title>Control de Guías — Prevención de Pérdidas IKEA</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f4f6f9;
+      --surface: #ffffff;
+      --surface2: #eef2f8;
+      --border: #c9d6e8;
+      --accent: #0058A3;
+      --accent2: #FF6B35;
+      --accent3: #2E9E5B;
+      --warn: #E8A800;
+      --danger: #E0282E;
+      --purple: #7B4FCC;
+      --text: #111c2e;
+      --text2: #5b7090;
+      --ikea-blue: #0058A3;
+      --ikea-yellow: #FFCC00;
+      --mono: 'Space Mono', monospace;
+      --sans: 'Syne', sans-serif;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; overflow-x: hidden; }
+    body::before {
+      content: ''; position: fixed; inset: 0;
+      background-image: linear-gradient(rgba(0,88,163,0.025) 1px,transparent 1px), linear-gradient(90deg,rgba(0,88,163,0.025) 1px,transparent 1px);
+      background-size: 40px 40px; pointer-events: none; z-index: 0;
+    }
+    body::after {
+      content: '';
+      position: fixed; top: 0; left: 0; right: 0;
+      height: 5px;
+      background: var(--ikea-yellow);
+      z-index: 101;
+    }
+    #app { position: relative; z-index: 1; }
+
+    /* HEADER */
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 24px; border-bottom: 3px solid var(--accent);
+      background: rgba(255,255,255,0.97); backdrop-filter: blur(12px);
+      position: sticky; top: 5px; z-index: 100;
+      box-shadow: 0 2px 12px rgba(0,88,163,0.08);
+    }
+    .logo { display: flex; align-items: center; gap: 12px; }
+    .logo-icon {
+      height: 46px; width: auto;
+      border-radius: 8px; overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--ikea-blue); padding: 4px 8px; flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(0,88,163,0.25);
+    }
+    .logo-icon img { height: 38px; width: auto; display: block; object-fit: contain; }
+    .logo-divider { width: 1px; height: 38px; background: var(--border); margin: 0 2px; flex-shrink: 0; }
+    .logo-text { font-size: 14px; font-weight: 800; letter-spacing: 0.3px; line-height: 1.15; text-transform: uppercase; }
+    .logo-sub { font-family: var(--mono); font-size: 9px; color: var(--accent); letter-spacing: 2px; text-transform: uppercase; margin-top: 2px; }
+    .nav-tabs { display: flex; gap: 4px; background: var(--surface2); border-radius: 10px; padding: 4px; border: 1px solid var(--border); }
+    .nav-tab { padding: 8px 16px; border-radius: 7px; font-family: var(--sans); font-weight: 700; font-size: 12px; cursor: pointer; border: none; background: transparent; color: var(--text2); transition: all 0.2s; }
+    .nav-tab.active { background: var(--accent); color: #fff; box-shadow: 0 2px 8px rgba(0,88,163,0.3); }
+    .nav-tab:not(.active):hover { color: var(--accent); background: #fff; }
+    .clock { font-family: var(--mono); font-size: 13px; color: var(--accent); text-align: right; font-weight: 700; }
+    .clock-date { font-size: 10px; color: var(--text2); }
+
+    /* PAGES */
+    .page { display: none; padding: 24px; max-width: 1400px; margin: 0 auto; }
+    .page.active { display: block; }
+    .page-title { font-size: 28px; font-weight: 800; margin-bottom: 6px; letter-spacing: -0.5px; }
+    .page-sub { font-family: var(--mono); font-size: 11px; color: var(--text2); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 28px; }
+
+    /* FORM CARD */
+    .form-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin-bottom: 28px; position: relative; overflow: hidden; box-shadow: 0 2px 14px rgba(17,28,46,0.06); }
+    .form-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg,var(--ikea-blue),var(--ikea-yellow)); }
+    .form-card.error-card::before { background: linear-gradient(90deg,var(--danger),var(--purple)); }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 16px; margin-bottom: 20px; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label { font-family: var(--mono); font-size: 10px; color: var(--text); letter-spacing: 1.5px; text-transform: uppercase; font-weight: 700; }
+    .field input, .field select, .field textarea { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; color: var(--text); font-family: var(--sans); font-size: 14px; transition: border-color 0.2s; outline: none; font-weight: 600; text-transform: uppercase; }
+    .field input::placeholder, .field textarea::placeholder { color: #8a97ab; font-weight: 400; text-transform: none; }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 3px rgba(0,88,163,0.10); }
+    .field select option { background: #fff; color: var(--text); }
+    .field textarea { resize: vertical; min-height: 72px; }
+
+    /* BUTTONS */
+    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; border-radius: 10px; font-family: var(--sans); font-weight: 700; font-size: 14px; cursor: pointer; border: none; transition: all 0.2s; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: #004785; transform: translateY(-1px); box-shadow: 0 4px 20px rgba(0,88,163,0.3); }
+    .btn-success { background: var(--accent3); color: #fff; }
+    .btn-success:hover { background: #248249; transform: translateY(-1px); }
+    .btn-warn { background: var(--warn); color: #fff; }
+    .btn-warn:hover { background: #c79100; transform: translateY(-1px); }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-danger:hover { background: #ff6b7a; transform: translateY(-1px); }
+    .btn-purple { background: var(--purple); color: #fff; }
+    .btn-purple:hover { background: #c98aff; transform: translateY(-1px); }
+    .btn-ghost { background: #fff; border: 1.5px solid var(--border); color: var(--text2); }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--accent); background: var(--surface2); }
+    .btn-sm { padding: 6px 14px; font-size: 12px; }
+    .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    .section-title { font-size: 14px; font-weight: 700; color: var(--text); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+
+    /* ERROR ZONE */
+    .error-zone {
+      background: rgba(224,40,46,0.06);
+      border: 1px dashed rgba(224,40,46,0.4);
+      border-radius: 12px;
+      padding: 20px;
+      margin-top: 20px;
+    }
+    .error-zone-title {
+      font-size: 13px; font-weight: 700; color: var(--danger);
+      text-transform: uppercase; letter-spacing: 1px;
+      margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+    }
+    .error-zone.sellado-err {
+      background: rgba(123,79,204,0.06);
+      border-color: rgba(123,79,204,0.4);
+    }
+    .error-zone.sellado-err .error-zone-title { color: var(--purple); }
+
+    /* TIMELINE PHASES */
+    .timeline-phases { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom: 20px; }
+    .phase-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 16px; text-align: center; transition: all 0.2s; }
+    .phase-card.active-phase { border-color: var(--accent); background: rgba(0,88,163,0.06); }
+    .phase-card.done-phase { border-color: var(--accent3); background: rgba(46,158,91,0.07); }
+    .phase-card.error-phase { border-color: var(--danger); background: rgba(224,40,46,0.06); }
+    .phase-num { width: 32px; height: 32px; border-radius: 50%; background: #fff; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 13px; font-weight: 700; margin: 0 auto 8px; }
+    .active-phase .phase-num { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .done-phase .phase-num { background: var(--accent3); color: #fff; border-color: var(--accent3); }
+    .error-phase .phase-num { background: var(--danger); color: #fff; border-color: var(--danger); }
+    .phase-label { font-size: 12px; font-weight: 700; margin-bottom: 4px; }
+    .phase-time { font-family: var(--mono); font-size: 11px; color: var(--text2); }
+    .phase-elapsed { font-family: var(--mono); font-size: 10px; color: var(--accent2); margin-top: 4px; }
+
+    /* TABLE */
+    .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; margin-bottom: 24px; box-shadow: 0 2px 14px rgba(17,28,46,0.05); }
+    .table-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 2px solid var(--accent); background: var(--surface2); }
+    .table-header-title { font-size: 15px; font-weight: 800; color: var(--accent); }
+    table { width: 100%; border-collapse: collapse; }
+    thead tr { background: var(--ikea-blue); }
+    thead th { padding: 12px 16px; font-family: var(--mono); font-size: 10px; color: #fff; text-transform: uppercase; letter-spacing: 1px; text-align: left; white-space: nowrap; }
+    tbody tr { border-bottom: 1px solid var(--border); transition: background 0.15s; background: #fff; }
+    tbody tr:nth-child(even) { background: var(--surface2); }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: rgba(0,88,163,0.06); }
+    tbody tr.row-error-revision { background: rgba(224,40,46,0.06); }
+    tbody tr.row-error-sellado { background: rgba(123,79,204,0.06); }
+    tbody td { padding: 13px 16px; font-size: 13px; vertical-align: middle; color: var(--text); }
+
+    /* BADGES */
+    .badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; font-family: var(--mono); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+    .badge-pending { background: rgba(255,107,53,0.15); color: var(--accent2); border: 1px solid rgba(255,107,53,0.3); }
+    .badge-reviewing { background: rgba(0,88,163,0.10); color: var(--accent); border: 1px solid rgba(0,88,163,0.3); }
+    .badge-waiting { background: rgba(232,168,0,0.12); color: var(--warn); border: 1px solid rgba(232,168,0,0.3); }
+    .badge-sealed { background: rgba(46,158,91,0.12); color: var(--accent3); border: 1px solid rgba(46,158,91,0.3); }
+    .badge-alert { background: rgba(224,40,46,0.15); color: var(--danger); border: 1px solid rgba(224,40,46,0.3); }
+    .badge-err-rev { background: rgba(224,40,46,0.18); color: var(--danger); border: 1px solid rgba(224,40,46,0.4); }
+    .badge-err-sell { background: rgba(123,79,204,0.18); color: var(--purple); border: 1px solid rgba(123,79,204,0.4); }
+    .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+    .dot-pending { background: var(--accent2); animation: pulse 2s infinite; }
+    .dot-reviewing { background: var(--accent); animation: pulse 1.5s infinite; }
+    .dot-waiting { background: var(--warn); animation: pulse 2s infinite; }
+    .dot-sealed { background: var(--accent3); }
+    .dot-error { background: var(--danger); animation: pulse 1s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+
+    .elapsed-ok { color: var(--accent3); font-family: var(--mono); font-size: 12px; }
+    .elapsed-warn { color: var(--warn); font-family: var(--mono); font-size: 12px; }
+    .elapsed-danger { color: var(--danger); font-family: var(--mono); font-size: 12px; }
+
+    /* STATS */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(190px,1fr)); gap: 16px; margin-bottom: 28px; }
+    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; position: relative; overflow: hidden; transition: all 0.2s; box-shadow: 0 2px 10px rgba(17,28,46,0.05); }
+    .stat-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(17,28,46,0.1); }
+    .stat-card::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; }
+    .stat-card.c1::after { background: var(--accent); }
+    .stat-card.c2::after { background: var(--accent2); }
+    .stat-card.c3::after { background: var(--accent3); }
+    .stat-card.c4::after { background: var(--warn); }
+    .stat-card.c5::after { background: var(--danger); }
+    .stat-card.c6::after { background: var(--purple); }
+    .stat-label { font-family: var(--mono); font-size: 10px; color: var(--text2); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px; }
+    .stat-value { font-size: 36px; font-weight: 800; line-height: 1; margin-bottom: 6px; }
+    .stat-sub { font-size: 12px; color: var(--text2); }
+
+    /* CHARTS */
+    .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 28px; }
+    .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; box-shadow: 0 2px 10px rgba(17,28,46,0.05); }
+    .chart-title { font-size: 13px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .bar-chart { display: flex; flex-direction: column; gap: 10px; }
+    .bar-row { display: flex; align-items: center; gap: 10px; }
+    .bar-label { font-size: 11px; color: var(--text2); width: 130px; flex-shrink: 0; font-family: var(--mono); }
+    .bar-track { flex: 1; height: 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 10px; transition: width 0.8s cubic-bezier(0.34,1.56,0.64,1); }
+    .bar-val { font-family: var(--mono); font-size: 11px; color: var(--text2); width: 36px; text-align: right; }
+    .donut-wrap { display: flex; align-items: center; gap: 20px; }
+    .donut-svg { flex-shrink: 0; }
+    .donut-legend { display: flex; flex-direction: column; gap: 8px; }
+    .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+    /* FILTER BAR */
+    .filter-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+    .filter-bar .field { min-width: 160px; margin: 0; }
+    .filter-bar label { display: none; }
+    .filter-bar input, .filter-bar select { padding: 9px 14px; font-size: 13px; }
+
+    /* DASHBOARD SECTION DIVIDER */
+    .dash-section { margin: 32px 0 16px; padding-bottom: 10px; border-bottom: 2px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .dash-section-title { font-size: 18px; font-weight: 800; }
+    .dash-section-badge { font-family: var(--mono); font-size: 10px; padding: 3px 10px; border-radius: 20px; font-weight: 700; }
+
+    /* TIMELINE LOG */
+    .timeline-log { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-top: 20px; max-height: 320px; overflow-y: auto; }
+    .timeline-log::-webkit-scrollbar { width: 4px; }
+    .timeline-log::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    .log-item { display: flex; align-items: flex-start; gap: 14px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .log-item:last-child { border-bottom: none; }
+    .log-item.log-error { background: rgba(224,40,46,0.05); border-radius: 8px; padding: 10px; margin: 2px -4px; }
+    .log-item.log-error-sell { background: rgba(123,79,204,0.05); border-radius: 8px; padding: 10px; margin: 2px -4px; }
+    .log-dot-wrap { display: flex; flex-direction: column; align-items: center; padding-top: 4px; }
+    .log-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .log-line { width: 1px; flex: 1; min-height: 20px; background: var(--border); margin-top: 4px; }
+    .log-content { flex: 1; }
+    .log-action { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+    .log-meta { font-family: var(--mono); font-size: 10px; color: var(--text2); }
+    .log-detail { font-size: 12px; color: var(--text2); margin-top: 4px; font-style: italic; }
+
+    /* MODAL */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(17,28,46,0.55); backdrop-filter: blur(8px); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 24px; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; width: 100%; max-width: 660px; max-height: 90vh; overflow-y: auto; transform: translateY(20px) scale(0.97); transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1); box-shadow: 0 20px 60px rgba(17,28,46,0.25); border-top: 4px solid var(--accent); }
+    .modal-overlay.open .modal { transform: translateY(0) scale(1); }
+    .modal-header { padding: 24px 24px 0; display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .modal-title { font-size: 18px; font-weight: 800; color: var(--accent); }
+    .modal-close { width: 32px; height: 32px; border-radius: 8px; background: var(--surface2); border: 1px solid var(--border); color: var(--text2); cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+    .modal-close:hover { background: var(--danger); color: #fff; border-color: var(--danger); }
+    .modal-body { padding: 0 24px 24px; }
+
+    /* TOAST */
+    .toast { position: fixed; bottom: 24px; right: 24px; z-index: 300; background: #fff; border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: 12px; padding: 14px 18px; font-size: 13px; transform: translateY(80px); opacity: 0; transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1); max-width: 320px; display: flex; align-items: center; gap: 10px; box-shadow: 0 6px 24px rgba(17,28,46,0.15); color: var(--text); }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast-icon { font-size: 18px; }
+
+    /* EMPTY */
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--text2); }
+    .empty-state .empty-icon { font-size: 48px; margin-bottom: 16px; }
+    .empty-state h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
+    .empty-state p { font-size: 13px; }
+
+    /* TABS INSIDE PAGE */
+    .inner-tabs { display: flex; gap: 4px; background: var(--surface2); border-radius: 10px; padding: 4px; margin-bottom: 24px; width: fit-content; border: 1px solid var(--border); }
+    .inner-tab { padding: 8px 20px; border-radius: 7px; font-weight: 700; font-size: 13px; cursor: pointer; border: none; background: transparent; color: var(--text2); transition: all 0.2s; }
+    .inner-tab.active { background: var(--accent); color: #fff; box-shadow: 0 2px 8px rgba(0,88,163,0.25); }
+
+    /* RESPONSIVE */
+    @media (max-width: 768px) {
+      header { padding: 12px 16px; flex-wrap: wrap; gap: 10px; }
+      .nav-tabs { order: 3; width: 100%; justify-content: center; }
+      .nav-tab { padding: 7px 10px; font-size: 11px; flex: 1; text-align: center; }
+      .page { padding: 16px; }
+      .page-title { font-size: 22px; }
+      .timeline-phases { grid-template-columns: 1fr; }
+      .charts-row { grid-template-columns: 1fr; }
+      .stats-grid { grid-template-columns: repeat(2,1fr); }
+      .form-grid { grid-template-columns: 1fr; }
+      table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    }
+    @media (max-width: 480px) {
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .clock { display: none; }
+    }
+
+    /* ====== SLA ALERT PANEL ====== */
+    #sla-alert-panel {
+      position: fixed;
+      bottom: 24px;
+      left: 24px;
+      z-index: 400;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 360px;
+      pointer-events: none;
+    }
+    .sla-alert-card {
+      background: #0d0608;
+      border: 1.5px solid var(--danger);
+      border-radius: 14px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      pointer-events: all;
+      box-shadow: 0 0 24px rgba(224,40,46,0.35), 0 4px 20px rgba(0,0,0,0.6);
+      animation: slaSlideIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+      position: relative;
+      overflow: hidden;
+    }
+    .sla-alert-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--danger), #ff9f43);
+    }
+    .sla-alert-card.critical {
+      animation: slaSlideIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both, slaPulseCard 1s ease-in-out infinite alternate;
+    }
+    @keyframes slaSlideIn {
+      from { transform: translateX(-120%); opacity: 0; }
+      to   { transform: translateX(0);     opacity: 1; }
+    }
+    @keyframes slaPulseCard {
+      from { box-shadow: 0 0 24px rgba(224,40,46,0.35), 0 4px 20px rgba(0,0,0,0.6); }
+      to   { box-shadow: 0 0 44px rgba(224,40,46,0.80), 0 4px 28px rgba(0,0,0,0.7); }
+    }
+    .sla-alert-icon {
+      font-size: 26px;
+      flex-shrink: 0;
+      animation: slaBell 0.5s ease-in-out infinite alternate;
+    }
+    @keyframes slaBell {
+      from { transform: rotate(-14deg); }
+      to   { transform: rotate(14deg);  }
+    }
+    .sla-alert-body { flex: 1; min-width: 0; }
+    .sla-alert-title { font-size: 11px; font-weight: 800; color: var(--danger); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 3px; }
+    .sla-alert-guia  { font-family: var(--mono); font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+    .sla-alert-meta  { font-family: var(--mono); font-size: 10px; color: var(--text2); margin-bottom: 6px; }
+    .sla-alert-timer { font-family: var(--mono); font-size: 24px; font-weight: 700; color: var(--danger); letter-spacing: 2px; }
+    .sla-alert-timer.amber { color: var(--warn); }
+    .sla-alert-actions { display: flex; gap: 6px; margin-top: 8px; }
+    .sla-btn { padding: 5px 12px; border-radius: 7px; font-family: var(--sans); font-weight: 700; font-size: 11px; cursor: pointer; border: none; transition: all 0.15s; }
+    .sla-btn-primary { background: var(--danger); color: #fff; }
+    .sla-btn-primary:hover { background: #ff6b7a; }
+    .sla-btn-dismiss { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
+    .sla-btn-dismiss:hover { color: var(--text); }
+    .sla-close { position: absolute; top: 8px; right: 8px; width: 20px; height: 20px; border-radius: 50%; background: rgba(224,40,46,0.2); border: none; color: var(--danger); font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+    .sla-close:hover { background: var(--danger); color: #fff; }
+    .sla-nav-badge { display: inline-flex; align-items: center; justify-content: center; background: var(--danger); color: #fff; font-size: 9px; font-weight: 800; font-family: var(--mono); border-radius: 10px; padding: 1px 5px; margin-left: 4px; animation: slaPulseBadge 1s ease-in-out infinite alternate; vertical-align: middle; }
+    @keyframes slaPulseBadge { from { opacity:0.7; transform:scale(0.9); } to { opacity:1; transform:scale(1.1); } }
+
+    /* ====== PIN MODAL ====== */
+    .pin-dot {
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: transparent;
+      transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .pin-dot.filled {
+      background: var(--accent);
+      border-color: var(--accent);
+      transform: scale(1.15);
+      box-shadow: 0 0 10px rgba(0,88,163,0.5);
+    }
+    .pin-dot.error {
+      background: var(--danger);
+      border-color: var(--danger);
+      box-shadow: 0 0 10px rgba(224,40,46,0.5);
+    }
+    .pin-key {
+      padding: 14px;
+      border-radius: 10px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 18px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: center;
+    }
+    .pin-key:hover { background: #fff; }
+    .pin-key:hover { background: var(--border); border-color: var(--accent); color: var(--accent); transform: scale(1.05); }
+    .pin-key:active { transform: scale(0.95); }
+    .pin-key-clear { background: rgba(224,40,46,0.1); border-color: rgba(224,40,46,0.3); color: var(--danger); font-size: 16px; }
+    .pin-key-clear:hover { background: rgba(224,40,46,0.25); border-color: var(--danger); color: var(--danger); }
+    .pin-key-ok { background: rgba(0,88,163,0.1); border-color: rgba(0,88,163,0.3); color: var(--accent); font-size: 18px; }
+    .pin-key-ok:hover { background: rgba(0,88,163,0.25); border-color: var(--accent); }
+    @keyframes pinShake {
+      0%,100% { transform: translateX(0); }
+      20%      { transform: translateX(-8px); }
+      40%      { transform: translateX(8px); }
+      60%      { transform: translateX(-6px); }
+      80%      { transform: translateX(6px); }
+    }
+    @keyframes pinSuccess {
+      0%   { transform: scale(1); }
+      50%  { transform: scale(1.08); }
+      100% { transform: scale(1); }
+    }
+
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">
+        <img src="data:image/jpeg;base64,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" alt="IKEA" />
+      </div>
+      <div class="logo-divider"></div>
+      <div>
+        <div class="logo-text">Control de Guías</div>
+        <div class="logo-sub">Prevención de Pérdidas</div>
+      </div>
+    </div>
+    <nav class="nav-tabs">
+      <button class="nav-tab active"  onclick="showPage('registro')">📋 Registro</button>
+      <button class="nav-tab" onclick="showPage('activos')">⚡ Activos</button>
+      <button class="nav-tab" onclick="showPage('dashboard')">📊 Dashboard</button>
+      <button class="nav-tab" onclick="showPage('errores')">🚨 Errores</button>
+    </nav>
+    <div style="display:flex;align-items:center;gap:14px">
+      <button id="sync-btn" class="btn btn-ghost btn-sm" onclick="abrirConfigSync()" title="Sincronizar con Google Sheets" style="display:flex;align-items:center;gap:6px">
+        <span id="sync-icon">☁️</span>
+        <span id="sync-label" style="font-size:11px">Sheets</span>
+      </button>
+      <div class="clock">
+        <div id="clock-time">00:00:00</div>
+        <div class="clock-date" id="clock-date"></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========== PAGE: REGISTRO ========== -->
+  <div class="page active" id="page-registro">
+    <div class="page-title">Nueva Recepción de Guía</div>
+    <div class="page-sub">Registro de entrega por parte del equipo de transporte</div>
+
+    <div class="form-card">
+      <div class="section-title">📦 Datos del Despacho</div>
+      <div class="form-grid">
+        <div class="field">
+          <label>N° Guía de Despacho</label>
+          <input type="text" id="f-guia" placeholder="ej: GD-2024-00123" oninput="toUpperPreserveCaret(this)" />
+        </div>
+        <div class="field">
+          <label>Patente / Placa Camión</label>
+          <input type="text" id="f-patente" placeholder="ej: BCDF-45" oninput="toUpperPreserveCaret(this)" />
+        </div>
+        <div class="field">
+          <label>Equipo Origen</label>
+          <select id="f-origen">
+            <option value="">Seleccionar...</option>
+            <option>Tienda</option>
+            <option>Outbound</option>
+            <option>Vacío</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Nombre Conductor / Responsable</label>
+          <input type="text" id="f-conductor" placeholder="Nombre completo" oninput="toUpperPreserveCaret(this)" />
+        </div>
+        <div class="field">
+          <label>Destino</label>
+          <select id="f-bultos">
+            <option value="">Seleccionar...</option>
+            <option>IPA</option>
+            <option>IPO</option>
+            <option>CT'S</option>
+            <option>Vacío</option>
+            <option>CD1</option>
+            <option>CD2</option>
+            <option>CD3</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Prevencionista que sella</label>
+          <select id="f-receptor">
+            <option value="">Seleccionar...</option>
+            <option>Johannellsy Perez</option>
+            <option>Edward Perez</option>
+            <option>Marco Arteaga</option>
+            <option>Elias Peñaloza</option>
+            <option>Maira Hosein</option>
+            <option>Gabriel de la Piedra</option>
+            <option>Ambar Zambrano</option>
+            <option>Andres Rodriguez</option>
+            <option>Bernardo Aguilar</option>
+            <option>Edgar Marquez</option>
+            <option>Jonathan Martinez</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-grid" style="grid-template-columns:1fr">
+        <div class="field">
+          <label>Observaciones (opcional)</label>
+          <textarea id="f-obs" placeholder="Novedades, sellos previos, condición de carga..." oninput="toUpperPreserveCaret(this)"></textarea>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="registrarGuia()">⏱ Iniciar Control — Registrar Recepción</button>
+    </div>
+
+    <!-- TABLA HOY -->
+    <div class="table-wrap">
+      <div class="table-header">
+        <div class="table-header-title">Registros de Hoy</div>
+        <span id="count-hoy" style="font-family:var(--mono);font-size:12px;color:var(--text2)">0 guías</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>N° Guía</th><th>Patente</th><th>Origen</th><th>Destino</th>
+            <th>Recepción</th><th>Estado</th><th>Errores</th><th>Tiempo Total</th><th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-hoy"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ========== PAGE: ACTIVOS ========== -->
+  <div class="page" id="page-activos">
+    <div class="page-title">Guías en Proceso</div>
+    <div class="page-sub">Seguimiento en tiempo real — fase a fase</div>
+    <div id="activos-container"></div>
+  </div>
+
+  <!-- ========== PAGE: DASHBOARD ========== -->
+  <div class="page" id="page-dashboard">
+    <div class="page-title">Dashboard de Control</div>
+    <div class="page-sub">Métricas y comportamiento operacional</div>
+
+    <div class="filter-bar">
+      <div class="field"><label>Desde</label><input type="date" id="f-desde" /></div>
+      <div class="field"><label>Hasta</label><input type="date" id="f-hasta" /></div>
+      <div class="field">
+        <label>Origen</label>
+        <select id="f-origen-dash">
+          <option value="">Todos los orígenes</option>
+          <option>Tienda</option><option>Outbound</option><option>Vacío</option>
+        </select>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="renderDashboard()">🔍 Filtrar</button>
+      <button class="btn btn-ghost btn-sm" onclick="resetFiltros()">↺ Resetear</button>
+    </div>
+
+    <div class="stats-grid" id="stats-grid"></div>
+
+    <div class="charts-row">
+      <div class="chart-card"><div class="chart-title">⏱ Tiempo Promedio por Fase</div><div class="bar-chart" id="chart-fases"></div></div>
+      <div class="chart-card">
+        <div class="chart-title">📦 Distribución por Estado</div>
+        <div class="donut-wrap">
+          <svg class="donut-svg" width="120" height="120" viewBox="0 0 120 120" id="donut-svg"></svg>
+          <div class="donut-legend" id="donut-legend"></div>
+        </div>
+      </div>
+    </div>
+    <div class="charts-row">
+      <div class="chart-card"><div class="chart-title">📊 Guías por Origen</div><div class="bar-chart" id="chart-origen"></div></div>
+      <div class="chart-card"><div class="chart-title">⚠️ Cumplimiento SLA por Fase</div><div class="bar-chart" id="chart-sla"></div></div>
+    </div>
+
+    <div class="table-wrap">
+      <div class="table-header">
+        <div class="table-header-title">Historial Completo</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost btn-sm" onclick="sincronizarTodoAhora()">☁️ Sync Sheets</button>
+          <button class="btn btn-ghost btn-sm" onclick="exportarCSV()">⬇ Exportar CSV</button>
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th><th>N° Guía</th><th>Patente</th><th>Origen</th><th>Destino</th>
+            <th>Prevencionista</th><th>T.Revisión</th><th>T.Prevención</th><th>T.Sellado</th>
+            <th>T.Total</th><th>Err.Rev</th><th>Err.Sell</th><th>Estado</th><th style="text-align:center">Eliminar</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-historial"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ========== PAGE: ERRORES ========== -->
+  <div class="page" id="page-errores">
+    <div class="page-title">🚨 Panel de Errores</div>
+    <div class="page-sub">Devoluciones en revisión y discrepancias en sellado</div>
+
+    <div class="filter-bar">
+      <div class="field"><label>Desde</label><input type="date" id="fe-desde" /></div>
+      <div class="field"><label>Hasta</label><input type="date" id="fe-hasta" /></div>
+      <div class="field">
+        <label>Tipo</label>
+        <select id="fe-tipo">
+          <option value="">Todos los tipos</option>
+          <option value="revision">Error Revisión</option>
+          <option value="sellado">Error Sellado</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Prevencionista</label>
+        <select id="fe-prev">
+          <option value="">Todos</option>
+          <option>Johannellsy Perez</option><option>Edward Perez</option><option>Marco Arteaga</option>
+          <option>Elias Peñaloza</option><option>Maira Hosein</option><option>Gabriel de la Piedra</option>
+          <option>Ambar Zambrano</option><option>Andres Rodriguez</option><option>Bernardo Aguilar</option>
+          <option>Edgar Marquez</option><option>Jonathan Martinez</option>
+        </select>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="renderErrores()">🔍 Filtrar</button>
+      <button class="btn btn-ghost btn-sm" onclick="resetFiltrosErr()">↺ Resetear</button>
+    </div>
+
+    <!-- STATS ERRORES -->
+    <div class="stats-grid" id="err-stats-grid"></div>
+
+    <!-- CHARTS ERRORES -->
+    <div class="charts-row">
+      <div class="chart-card"><div class="chart-title">🔴 Errores de Revisión — Motivos</div><div class="bar-chart" id="err-chart-rev"></div></div>
+      <div class="chart-card"><div class="chart-title">🟣 Errores de Sellado — Motivos</div><div class="bar-chart" id="err-chart-sell"></div></div>
+    </div>
+    <div class="charts-row">
+      <div class="chart-card"><div class="chart-title">👤 Errores por Prevencionista</div><div class="bar-chart" id="err-chart-prev"></div></div>
+      <div class="chart-card"><div class="chart-title">📅 Errores por Origen</div><div class="bar-chart" id="err-chart-orig"></div></div>
+    </div>
+
+    <!-- TABLA ERRORES REVISION -->
+    <div class="dash-section">
+      <span style="font-size:20px">🔴</span>
+      <div class="dash-section-title">Devoluciones en Revisión</div>
+      <span class="dash-section-badge" style="background:rgba(224,40,46,0.15);color:var(--danger)" id="count-err-rev">0</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Fecha</th><th>N° Guía</th><th>Patente</th><th>Origen</th><th>Destino</th><th>Prevencionista</th><th>Motivo</th><th>Detalle</th><th>Hora Error</th></tr>
+        </thead>
+        <tbody id="tabla-err-rev"></tbody>
+      </table>
+    </div>
+
+    <!-- TABLA ERRORES SELLADO -->
+    <div class="dash-section">
+      <span style="font-size:20px">🟣</span>
+      <div class="dash-section-title">Discrepancias en Sellado</div>
+      <span class="dash-section-badge" style="background:rgba(123,79,204,0.15);color:var(--purple)" id="count-err-sell">0</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Fecha</th><th>N° Guía</th><th>Patente</th><th>Origen</th><th>Destino</th><th>Prevencionista</th><th>Motivo</th><th>Detalle</th><th>Hora Error</th></tr>
+        </thead>
+        <tbody id="tabla-err-sell"></tbody>
+      </table>
+    </div>
+  </div>
+
+<!-- MODAL PIN SEGURIDAD -->
+<div class="modal-overlay" id="modal-pin">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-header" style="padding-bottom:0">
+      <div>
+        <div class="modal-title" style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:22px">🔐</span> Acceso Restringido
+        </div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text2);letter-spacing:1.5px;text-transform:uppercase;margin-top:4px">Verificación de seguridad</div>
+      </div>
+      <button class="modal-close" onclick="closePinModal()">×</button>
+    </div>
+    <div class="modal-body" style="padding-top:20px">
+      <div style="background:rgba(232,168,0,0.07);border:1px solid rgba(232,168,0,0.25);border-radius:10px;padding:12px 14px;margin-bottom:20px;display:flex;align-items:center;gap:10px">
+        <span style="font-size:18px">⚠️</span>
+        <span style="font-size:12px;color:var(--warn)">Esta acción requiere autorización. Ingresa el código de seguridad para continuar.</span>
+      </div>
+
+      <div style="margin-bottom:20px">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px">Código de Seguridad</div>
+        <!-- PIN DOTS display -->
+        <div id="pin-dots" style="display:flex;justify-content:center;gap:14px;margin-bottom:16px">
+          <div class="pin-dot" id="pin-dot-0"></div>
+          <div class="pin-dot" id="pin-dot-1"></div>
+          <div class="pin-dot" id="pin-dot-2"></div>
+          <div class="pin-dot" id="pin-dot-3"></div>
+        </div>
+        <!-- Numpad -->
+        <div id="pin-numpad" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:240px;margin:0 auto">
+          <button class="pin-key" onclick="pinKey('1')">1</button>
+          <button class="pin-key" onclick="pinKey('2')">2</button>
+          <button class="pin-key" onclick="pinKey('3')">3</button>
+          <button class="pin-key" onclick="pinKey('4')">4</button>
+          <button class="pin-key" onclick="pinKey('5')">5</button>
+          <button class="pin-key" onclick="pinKey('6')">6</button>
+          <button class="pin-key" onclick="pinKey('7')">7</button>
+          <button class="pin-key" onclick="pinKey('8')">8</button>
+          <button class="pin-key" onclick="pinKey('9')">9</button>
+          <button class="pin-key pin-key-clear" onclick="pinClear()" style="grid-column:1">⌫</button>
+          <button class="pin-key" onclick="pinKey('0')">0</button>
+          <button class="pin-key pin-key-ok" onclick="pinConfirm()" style="grid-column:3">✓</button>
+        </div>
+      </div>
+
+      <div id="pin-error" style="display:none;text-align:center;font-family:var(--mono);font-size:11px;color:var(--danger);margin-top:8px;animation:pinShake 0.4s ease">
+        ❌ Código incorrecto. Intenta nuevamente.
+      </div>
+      <div id="pin-attempts" style="text-align:center;font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:6px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ELIMINAR REGISTRO -->
+<div class="modal-overlay" id="modal-del">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header" style="padding-bottom:0">
+      <div>
+        <div class="modal-title" style="display:flex;align-items:center;gap:10px;color:var(--danger)">
+          <span style="font-size:22px">🗑</span> Eliminar Registro
+        </div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text2);letter-spacing:1.5px;text-transform:uppercase;margin-top:4px">Acción irreversible — requiere autorización</div>
+      </div>
+      <button class="modal-close" onclick="closeDeleteModal()">×</button>
+    </div>
+    <div class="modal-body" style="padding-top:20px">
+
+      <!-- Guia info -->
+      <div id="del-guia-info" style="background:rgba(224,40,46,0.07);border:1px solid rgba(224,40,46,0.25);border-radius:10px;padding:14px;margin-bottom:20px">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Registro a eliminar</div>
+        <div id="del-guia-label" style="font-size:16px;font-weight:800;color:var(--danger)"></div>
+        <div style="font-size:12px;color:var(--text2);margin-top:4px">Esta acción eliminará el registro de forma permanente y no podrá recuperarse.</div>
+      </div>
+
+      <!-- PIN input -->
+      <div style="margin-bottom:16px">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px">Código de autorización</div>
+        <div id="del-pin-dots" style="display:flex;justify-content:center;gap:14px;margin-bottom:16px">
+          <div class="pin-dot" id="del-dot-0"></div>
+          <div class="pin-dot" id="del-dot-1"></div>
+          <div class="pin-dot" id="del-dot-2"></div>
+          <div class="pin-dot" id="del-dot-3"></div>
+        </div>
+        <div id="del-pin-numpad" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:240px;margin:0 auto">
+          <button class="pin-key" onclick="delPinKey('1')">1</button>
+          <button class="pin-key" onclick="delPinKey('2')">2</button>
+          <button class="pin-key" onclick="delPinKey('3')">3</button>
+          <button class="pin-key" onclick="delPinKey('4')">4</button>
+          <button class="pin-key" onclick="delPinKey('5')">5</button>
+          <button class="pin-key" onclick="delPinKey('6')">6</button>
+          <button class="pin-key" onclick="delPinKey('7')">7</button>
+          <button class="pin-key" onclick="delPinKey('8')">8</button>
+          <button class="pin-key" onclick="delPinKey('9')">9</button>
+          <button class="pin-key pin-key-clear" onclick="delPinClear()" style="grid-column:1">⌫</button>
+          <button class="pin-key" onclick="delPinKey('0')">0</button>
+          <button class="pin-key pin-key-ok" onclick="delPinConfirm()" style="grid-column:3">✓</button>
+        </div>
+      </div>
+
+      <div id="del-pin-error" style="display:none;text-align:center;font-family:var(--mono);font-size:11px;color:var(--danger);margin-top:8px">
+        ❌ Código incorrecto. Intenta nuevamente.
+      </div>
+      <div id="del-pin-attempts" style="text-align:center;font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:6px"></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- MODAL SYNC GOOGLE SHEETS -->
+<div class="modal-overlay" id="modal-sync">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:22px">☁️</span> Sincronización con Google Sheets
+        </div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text2);letter-spacing:1.5px;text-transform:uppercase;margin-top:4px">Conecta tu planilla para respaldo y dashboard espejo</div>
+      </div>
+      <button class="modal-close" onclick="closeSyncModal()">×</button>
+    </div>
+    <div class="modal-body">
+
+      <div style="background:rgba(0,88,163,0.06);border:1px solid rgba(0,88,163,0.2);border-radius:10px;padding:14px;margin-bottom:20px;font-size:12px;color:var(--text2);line-height:1.6">
+        📋 Pega aquí la <strong>URL del Web App</strong> de tu Google Apps Script (la obtienes al implementar el script que te entregamos). Una vez conectada, cada guía registrada se enviará automáticamente a tu planilla.
+      </div>
+
+      <div class="field" style="margin-bottom:16px">
+        <label>URL del Web App (Apps Script)</label>
+        <input type="text" id="sync-url" placeholder="https://script.google.com/macros/s/XXXXX/exec" />
+      </div>
+
+      <div id="sync-status-box" style="display:none;border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:12px"></div>
+
+      <div class="btn-group">
+        <button class="btn btn-primary" onclick="guardarYProbarSync()">🔗 Conectar y Probar</button>
+        <button class="btn btn-success" onclick="sincronizarTodoAhora()">🔄 Sincronizar Todo Ahora</button>
+        <button class="btn btn-ghost" onclick="desconectarSync()">Desconectar</button>
+      </div>
+
+      <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+        <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px">Estado actual</div>
+        <div id="sync-info" style="font-family:var(--mono);font-size:11px;color:var(--text2)">No conectado</div>
+      </div>
+    </div>
+  </div>
+</div>
+</div><!-- /app -->
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">Detalle Guía</div>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<!-- MODAL ERROR REVISION -->
+<div class="modal-overlay" id="modal-err-rev">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" style="color:var(--danger)">🔴 Registrar Error en Revisión</div>
+      <button class="modal-close" onclick="closeModalErrRev()">×</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--text2);margin-bottom:20px">La guía presenta un error durante la revisión y debe devolverse. Registra el motivo para el seguimiento.</p>
+      <div class="form-grid" style="grid-template-columns:1fr">
+        <div class="field">
+          <label>Motivo del Error / Devolución</label>
+          <select id="err-rev-motivo">
+            <option value="">Seleccionar motivo...</option>
+            <option>Guía no corresponde a la carga</option>
+            <option>Diferencia en cantidad de productos</option>
+            <option>Productos no declarados en guía</option>
+            <option>Guía ilegible o incompleta</option>
+            <option>Datos del remitente incorrectos</option>
+            <option>Guía duplicada</option>
+            <option>Sellos rotos o irregulares</option>
+            <option>Otro</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Descripción detallada</label>
+          <textarea id="err-rev-detalle" placeholder="Describe el error con el mayor detalle posible..." oninput="toUpperPreserveCaret(this)"></textarea>
+        </div>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-danger" onclick="confirmarErrorRev()">🔴 Confirmar Devolución</button>
+        <button class="btn btn-ghost" onclick="closeModalErrRev()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ERROR SELLADO -->
+<div class="modal-overlay" id="modal-err-sell">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" style="color:var(--purple)">🟣 Registrar Error en Sellado</div>
+      <button class="modal-close" onclick="closeModalErrSell()">×</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--text2);margin-bottom:20px">Se detectó una discrepancia entre la guía y el físico del camión al momento del sellado.</p>
+      <div class="form-grid" style="grid-template-columns:1fr">
+        <div class="field">
+          <label>Motivo de la Discrepancia</label>
+          <select id="err-sell-motivo">
+            <option value="">Seleccionar motivo...</option>
+            <option>Carga física no coincide con guía</option>
+            <option>Productos en exceso no declarados</option>
+            <option>Productos faltantes respecto a guía</option>
+            <option>Sello del camión manipulado</option>
+            <option>Camión con carga ajena</option>
+            <option>N° de sello no corresponde</option>
+            <option>Carga dañada o en mal estado</option>
+            <option>Otro</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Descripción detallada</label>
+          <textarea id="err-sell-detalle" placeholder="Describe la discrepancia encontrada..." oninput="toUpperPreserveCaret(this)"></textarea>
+        </div>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-purple" onclick="confirmarErrorSell()">🟣 Confirmar Discrepancia</button>
+        <button class="btn btn-ghost" onclick="closeModalErrSell()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <span class="toast-icon" id="toast-icon">✅</span>
+  <span id="toast-msg"></span>
+</div>
+
+<script>
+// ============================================================
+// DATA LAYER
+// ============================================================
+const DB_KEY = 'despacho_ctrl_v3';
+
+function loadDB() {
+  try {
+    const raw = localStorage.getItem(DB_KEY);
+    if (raw) return JSON.parse(raw);
+    // Migrate from v2
+    const old = localStorage.getItem('despacho_ctrl_v2');
+    if (old) {
+      const o = JSON.parse(old);
+      o.guias = o.guias.map(g => ({ ...g, errores_revision: g.errores_revision || [], errores_sellado: g.errores_sellado || [] }));
+      return o;
+    }
+    return { guias: [] };
+  } catch { return { guias: [] }; }
+}
+function saveDB(db) { localStorage.setItem(DB_KEY, JSON.stringify(db)); }
+let db = loadDB();
+
+// ============================================================
+// GOOGLE SHEETS SYNC ENGINE
+// ============================================================
+const SYNC_URL_KEY = 'despacho_sync_url';
+let _syncQueue = [];
+let _syncing = false;
+
+function getSyncUrl() { return localStorage.getItem(SYNC_URL_KEY) || ''; }
+function setSyncUrl(url) { localStorage.setItem(SYNC_URL_KEY, url); }
+
+function updateSyncIndicator() {
+  const url = getSyncUrl();
+  const icon = document.getElementById('sync-icon');
+  const label = document.getElementById('sync-label');
+  if (!icon || !label) return;
+  if (url) {
+    icon.textContent = '✅';
+    label.textContent = 'Conectado';
+    label.style.color = 'var(--accent3)';
+  } else {
+    icon.textContent = '☁️';
+    label.textContent = 'Sheets';
+    label.style.color = '';
+  }
+}
+
+function abrirConfigSync() {
+  document.getElementById('sync-url').value = getSyncUrl();
+  const info = document.getElementById('sync-info');
+  const url = getSyncUrl();
+  info.innerHTML = url
+    ? `✅ Conectado a:<br><span style="word-break:break-all">${url}</span>`
+    : 'No conectado. Ingresa la URL de tu Web App.';
+  document.getElementById('sync-status-box').style.display = 'none';
+  document.getElementById('modal-sync').classList.add('open');
+}
+function closeSyncModal() { document.getElementById('modal-sync').classList.remove('open'); }
+
+function showSyncStatus(msg, type) {
+  const box = document.getElementById('sync-status-box');
+  box.style.display = 'block';
+  box.textContent = msg;
+  if (type === 'ok') { box.style.background = 'rgba(46,158,91,0.1)'; box.style.border = '1px solid rgba(46,158,91,0.3)'; box.style.color = 'var(--accent3)'; }
+  if (type === 'err') { box.style.background = 'rgba(224,40,46,0.1)'; box.style.border = '1px solid rgba(224,40,46,0.3)'; box.style.color = 'var(--danger)'; }
+  if (type === 'info') { box.style.background = 'rgba(0,88,163,0.08)'; box.style.border = '1px solid rgba(0,88,163,0.25)'; box.style.color = 'var(--accent)'; }
+}
+
+async function guardarYProbarSync() {
+  const url = document.getElementById('sync-url').value.trim();
+  if (!url) { showSyncStatus('⚠️ Ingresa una URL válida', 'err'); return; }
+  showSyncStatus('🔄 Probando conexión...', 'info');
+  setSyncUrl(url);
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'ping' })
+    });
+    const data = await res.json();
+    if (data && data.status === 'ok') {
+      showSyncStatus('✅ Conexión exitosa. Sincronizando datos existentes...', 'ok');
+      updateSyncIndicator();
+      await sincronizarTodoAhora(true);
+    } else {
+      showSyncStatus('⚠️ Respuesta inesperada del servidor. Verifica el script.', 'err');
+    }
+  } catch (e) {
+    showSyncStatus('❌ No se pudo conectar. Verifica la URL y que el script esté implementado como "Cualquier usuario".', 'err');
+  }
+}
+
+async function sincronizarTodoAhora(silent) {
+  const url = getSyncUrl();
+  if (!url) { if (!silent) toast('⚠️', 'Primero conecta tu Google Sheet'); return; }
+  if (!silent) showSyncStatus('🔄 Sincronizando ' + db.guias.length + ' registros...', 'info');
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'syncAll', guias: db.guias })
+    });
+    const data = await res.json();
+    if (data && data.status === 'ok') {
+      if (!silent) showSyncStatus('✅ ' + db.guias.length + ' registros sincronizados con Google Sheets', 'ok');
+      toast('☁️', 'Sincronización completada');
+    } else {
+      if (!silent) showSyncStatus('⚠️ El script respondió con un error', 'err');
+    }
+  } catch (e) {
+    if (!silent) showSyncStatus('❌ Error de conexión al sincronizar', 'err');
+  }
+}
+
+function desconectarSync() {
+  localStorage.removeItem(SYNC_URL_KEY);
+  document.getElementById('sync-url').value = '';
+  updateSyncIndicator();
+  showSyncStatus('🔌 Desconectado de Google Sheets', 'info');
+}
+
+// Auto-sync silencioso: envía solo el registro modificado más reciente
+async function autoSyncGuia(guia) {
+  const url = getSyncUrl();
+  if (!url) return;
+  try {
+    await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'upsert', guia })
+    });
+  } catch (e) { /* fallo silencioso, no bloquea la app */ }
+}
+
+async function autoSyncDelete(guiaId) {
+  const url = getSyncUrl();
+  if (!url) return;
+  try {
+    await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'delete', id: guiaId })
+    });
+  } catch (e) { /* fallo silencioso */ }
+}
+
+document.getElementById('modal-sync').addEventListener('click', function(e) {
+  if (e.target === this) closeSyncModal();
+});
+
+// Current guia id for error modals
+let _errGuiaId = null;
+
+// ============================================================
+// HELPERS
+// ============================================================
+function fmtTime(d) { if (!d) return '—'; return new Date(d).toLocaleTimeString('es-CL', { hour:'2-digit', minute:'2-digit', second:'2-digit' }); }
+function fmtDate(d) { if (!d) return '—'; return new Date(d).toLocaleDateString('es-CL'); }
+function fmtDateTime(d) { if (!d) return '—'; return new Date(d).toLocaleString('es-CL'); }
+function elapsedMs(start, end) { if (!start) return 0; return new Date(end || new Date()) - new Date(start); }
+function fmtElapsed(ms) {
+  if (!ms || ms < 0) return '—';
+  const s = Math.floor(ms/1000), m = Math.floor(s/60), h = Math.floor(m/60);
+  if (h > 0) return `${h}h ${m%60}m`;
+  if (m > 0) return `${m}m ${s%60}s`;
+  return `${s}s`;
+}
+function uid() { return Date.now().toString(36) + Math.random().toString(36).substr(2,5); }
+function todayStr() { return new Date().toISOString().split('T')[0]; }
+
+const SLA = { recepcion_a_revision:10, revision_a_prevencion:20, prevencion_a_sellado:15, total:15 };
+
+function estadoLabel(g) {
+  if (g.t_sellado) return 'Sellado';
+  if (g.t_prevencion) return 'En Prevención';
+  if (g.t_revision) return 'En Revisión';
+  return 'Recepcionado';
+}
+
+function estadoBadge(g) {
+  const errRev = (g.errores_revision||[]).length;
+  const errSell = (g.errores_sellado||[]).length;
+  const errBadges = [
+    errRev ? `<span class="badge badge-err-rev">🔴 ${errRev} rev</span>` : '',
+    errSell ? `<span class="badge badge-err-sell">🟣 ${errSell} sell</span>` : ''
+  ].filter(Boolean).join(' ');
+
+  let main = '';
+  if (g.t_sellado) main = `<span class="badge badge-sealed"><span class="dot dot-sealed"></span>Sellado</span>`;
+  else if (g.t_prevencion) main = `<span class="badge badge-waiting"><span class="dot dot-waiting"></span>En Prevención</span>`;
+  else if (g.t_revision) main = `<span class="badge badge-reviewing"><span class="dot dot-reviewing"></span>En Revisión</span>`;
+  else main = `<span class="badge badge-pending"><span class="dot dot-pending"></span>Recepcionado</span>`;
+  return main + (errBadges ? ' ' + errBadges : '');
+}
+
+function errBadgesOnly(g) {
+  const r = (g.errores_revision||[]).length, s = (g.errores_sellado||[]).length;
+  if (!r && !s) return '<span style="color:var(--text2);font-size:11px">—</span>';
+  return [r ? `<span class="badge badge-err-rev">🔴 ${r}</span>` : '', s ? `<span class="badge badge-err-sell">🟣 ${s}</span>` : ''].filter(Boolean).join(' ');
+}
+
+function alertaClass(ms, lim) {
+  const m = ms/60000;
+  if (m > lim*1.5) return 'elapsed-danger';
+  if (m > lim) return 'elapsed-warn';
+  return 'elapsed-ok';
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(t => {
+    const txt = t.textContent.toLowerCase();
+    if (id === 'registro' && txt.includes('registro')) t.classList.add('active');
+    if (id === 'activos' && txt.includes('activo')) t.classList.add('active');
+    if (id === 'dashboard' && txt.includes('dashboard')) t.classList.add('active');
+    if (id === 'errores' && txt.includes('error')) t.classList.add('active');
+  });
+  if (id === 'activos') renderActivos();
+  if (id === 'dashboard') renderDashboard();
+  if (id === 'registro') renderTablaHoy();
+  if (id === 'errores') renderErrores();
+}
+
+// ============================================================
+// CLOCK
+// ============================================================
+function updateClock() {
+  const n = new Date();
+  document.getElementById('clock-time').textContent = n.toLocaleTimeString('es-CL');
+  document.getElementById('clock-date').textContent = n.toLocaleDateString('es-CL', {weekday:'short',day:'numeric',month:'short'});
+}
+setInterval(updateClock, 1000); updateClock();
+
+// ============================================================
+// UPPERCASE HELPER — preserva posición del cursor
+// ============================================================
+function toUpperPreserveCaret(el) {
+  const start = el.selectionStart;
+  const end = el.selectionEnd;
+  el.value = el.value.toUpperCase();
+  if (start !== null && end !== null) {
+    el.setSelectionRange(start, end);
+  }
+}
+
+// ============================================================
+// REGISTRO
+// ============================================================
+function registrarGuia() {
+  const guia = document.getElementById('f-guia').value.trim();
+  const patente = document.getElementById('f-patente').value.trim();
+  const origen = document.getElementById('f-origen').value;
+  const conductor = document.getElementById('f-conductor').value.trim();
+  const bultos = document.getElementById('f-bultos').value;
+  const receptor = document.getElementById('f-receptor').value;
+  const obs = document.getElementById('f-obs').value.trim();
+
+  if (!guia || !patente || !origen || !receptor) {
+    toast('⚠️', 'Completa los campos obligatorios: N° Guía, Patente, Origen y Prevencionista');
+    return;
+  }
+  const hoy = todayStr();
+  if (db.guias.find(g => g.guia === guia && g.fecha === hoy)) { toast('⚠️', 'Esta guía ya fue registrada hoy'); return; }
+
+  const registro = {
+    id: uid(), fecha: hoy, guia, patente, origen, conductor, bultos, receptor, obs,
+    t_recepcion: new Date().toISOString(),
+    t_revision: null, t_prevencion: null, t_sellado: null,
+    errores_revision: [], errores_sellado: [],
+    log: [{ ts: new Date().toISOString(), accion: 'Guía recepcionada', user: receptor, tipo: 'ok' }]
+  };
+  db.guias.push(registro);
+  saveDB(db);
+  autoSyncGuia(registro);
+
+  ['f-guia','f-patente','f-conductor','f-obs'].forEach(id => document.getElementById(id).value = '');
+  ['f-origen','f-bultos','f-receptor'].forEach(id => document.getElementById(id).value = '');
+  toast('✅', `Guía ${guia} registrada — Control iniciado`);
+  renderTablaHoy();
+}
+
+// ============================================================
+// TABLA HOY
+// ============================================================
+function renderTablaHoy() {
+  const hoy = todayStr();
+  const guiasHoy = db.guias.filter(g => g.fecha === hoy).slice().reverse();
+  const tbody = document.getElementById('tabla-hoy');
+  document.getElementById('count-hoy').textContent = `${guiasHoy.length} guía${guiasHoy.length!==1?'s':''}`;
+
+  if (!guiasHoy.length) {
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">📋</div><h3>Sin registros hoy</h3><p>Registra la primera guía del día</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = guiasHoy.map(g => {
+    const total = elapsedMs(g.t_recepcion, g.t_sellado);
+    const totalStr = g.t_sellado ? fmtElapsed(total) : fmtElapsed(elapsedMs(g.t_recepcion));
+    const cls = g.t_sellado ? 'elapsed-ok' : alertaClass(elapsedMs(g.t_recepcion), SLA.total);
+    const errR = (g.errores_revision||[]).length, errS = (g.errores_sellado||[]).length;
+    const rowCls = errS ? 'row-error-sellado' : errR ? 'row-error-revision' : '';
+    return `<tr class="${rowCls}">
+      <td style="font-family:var(--mono);font-size:12px"><strong>${g.guia}</strong></td>
+      <td style="font-family:var(--mono);font-size:12px">${g.patente}</td>
+      <td style="font-size:12px;color:var(--text2)">${g.origen}</td>
+      <td style="font-size:12px;color:var(--text2)">${g.bultos||'—'}</td>
+      <td style="font-family:var(--mono);font-size:12px">${fmtTime(g.t_recepcion)}</td>
+      <td>${estadoBadge(g)}</td>
+      <td>${errBadgesOnly(g)}</td>
+      <td class="${cls}">${totalStr}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="openGuia('${g.id}')">Ver / Avanzar</button></td>
+    </tr>`;
+  }).join('');
+}
+
+// ============================================================
+// ACTIVOS
+// ============================================================
+function renderActivos() {
+  const activos = db.guias.filter(g => !g.t_sellado).slice().reverse();
+  const container = document.getElementById('activos-container');
+  if (!activos.length) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">⚡</div><h3>Sin guías activas</h3><p>Todas las guías han sido selladas</p></div>`;
+    return;
+  }
+  container.innerHTML = activos.map(g => {
+    const f1 = elapsedMs(g.t_recepcion, g.t_revision||null);
+    const f2 = g.t_revision ? elapsedMs(g.t_revision, g.t_prevencion||null) : 0;
+    const f3 = g.t_prevencion ? elapsedMs(g.t_prevencion, null) : 0;
+    const p1done = !!g.t_revision, p2done = !!g.t_prevencion;
+    const p1cls = p1done ? 'done-phase' : 'active-phase';
+    const p2cls = p1done ? (p2done ? 'done-phase' : 'active-phase') : '';
+    const p3cls = p2done ? 'active-phase' : '';
+    const alerta = elapsedMs(g.t_recepcion) > SLA.total * 60000 * 1.2;
+    const errR = (g.errores_revision||[]).length, errS = (g.errores_sellado||[]).length;
+
+    return `
+    <div class="form-card" style="margin-bottom:20px;${alerta?'border-color:var(--danger)':''}${errS?'border-color:var(--purple)':''}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+        <div>
+          <div style="font-size:20px;font-weight:800">${g.guia}</div>
+          <div style="font-family:var(--mono);font-size:11px;color:var(--text2);margin-top:3px">
+            ${g.patente} · ${g.origen} · Destino: ${g.bultos||'—'} · ${g.receptor}
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          ${alerta ? '<span class="badge badge-alert">⚠ FUERA SLA</span>' : ''}
+          ${errR ? `<span class="badge badge-err-rev">🔴 ${errR} error rev.</span>` : ''}
+          ${errS ? `<span class="badge badge-err-sell">🟣 ${errS} discrepancia sell.</span>` : ''}
+          ${estadoBadge(g)}
+          <button class="btn btn-ghost btn-sm" onclick="openGuia('${g.id}')">Ver Detalle</button>
+        </div>
+      </div>
+
+      <div class="timeline-phases">
+        <div class="phase-card ${p1cls}">
+          <div class="phase-num">${p1done ? '✓' : '1'}</div>
+          <div class="phase-label">Recepción → Revisión</div>
+          <div class="phase-time">${fmtTime(g.t_recepcion)}</div>
+          <div class="phase-elapsed">${p1done ? fmtElapsed(elapsedMs(g.t_recepcion,g.t_revision)) : fmtElapsed(f1)+' transcurrido'}</div>
+          ${!p1done ? `
+            <button class="btn btn-primary btn-sm" style="margin-top:10px;width:100%" onclick="avanzar('${g.id}','revision')">✔ Marcar Revisada</button>
+            <button class="btn btn-danger btn-sm" style="margin-top:6px;width:100%" onclick="abrirErrorRev('${g.id}')">🔴 Error — Devolver</button>
+          ` : ''}
+        </div>
+
+        <div class="phase-card ${p2cls}">
+          <div class="phase-num">${p2done ? '✓' : '2'}</div>
+          <div class="phase-label">Revisión → Prevención</div>
+          <div class="phase-time">${g.t_revision ? fmtTime(g.t_revision) : '—'}</div>
+          <div class="phase-elapsed">${p1done&&!p2done ? fmtElapsed(f2)+' transcurrido' : (p2done ? fmtElapsed(elapsedMs(g.t_revision,g.t_prevencion)) : '—')}</div>
+          ${p1done&&!p2done ? `<button class="btn btn-warn btn-sm" style="margin-top:10px;width:100%" onclick="avanzar('${g.id}','prevencion')">🔒 Llamar Prevención</button>` : ''}
+        </div>
+
+        <div class="phase-card ${p3cls}">
+          <div class="phase-num">3</div>
+          <div class="phase-label">Prevención → Sellado</div>
+          <div class="phase-time">${g.t_prevencion ? fmtTime(g.t_prevencion) : '—'}</div>
+          <div class="phase-elapsed">${p2done ? fmtElapsed(f3)+' transcurrido' : '—'}</div>
+          ${p2done ? `
+            <button class="btn btn-success btn-sm" style="margin-top:10px;width:100%" onclick="avanzar('${g.id}','sellado')">🔏 Camión Sellado</button>
+            <button class="btn btn-purple btn-sm" style="margin-top:6px;width:100%" onclick="abrirErrorSell('${g.id}')">🟣 Discrepancia</button>
+          ` : ''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// AVANZAR FASE
+// ============================================================
+function avanzar(id, fase) {
+  const g = db.guias.find(x => x.id === id);
+  if (!g) return;
+  const ts = new Date().toISOString();
+  const labels = { revision:'Revisión completada', prevencion:'Prevención notificada', sellado:'Camión sellado ✅' };
+  if (fase==='revision') { g.t_revision=ts; g.log.push({ts,accion:'Revisión completada',user:g.receptor,tipo:'ok'}); }
+  if (fase==='prevencion') { g.t_prevencion=ts; g.log.push({ts,accion:'Prevención de pérdidas llamada',user:g.receptor,tipo:'ok'}); }
+  if (fase==='sellado') { g.t_sellado=ts; g.log.push({ts,accion:'Camión sellado',user:g.receptor,tipo:'ok'}); }
+  saveDB(db); toast('✅', labels[fase]);
+  autoSyncGuia(g);
+  renderActivos(); renderTablaHoy();
+}
+
+// ============================================================
+// ERROR REVISION
+// ============================================================
+function abrirErrorRev(id) {
+  _errGuiaId = id;
+  document.getElementById('err-rev-motivo').value = '';
+  document.getElementById('err-rev-detalle').value = '';
+  document.getElementById('modal-err-rev').classList.add('open');
+}
+function closeModalErrRev() { document.getElementById('modal-err-rev').classList.remove('open'); _errGuiaId = null; }
+
+function confirmarErrorRev() {
+  const g = db.guias.find(x => x.id === _errGuiaId);
+  if (!g) return;
+  const motivo = document.getElementById('err-rev-motivo').value;
+  const detalle = document.getElementById('err-rev-detalle').value.trim();
+  if (!motivo) { toast('⚠️','Selecciona un motivo'); return; }
+
+  const ts = new Date().toISOString();
+  const err = { id: uid(), ts, motivo, detalle, prevencionista: g.receptor };
+  g.errores_revision = g.errores_revision || [];
+  g.errores_revision.push(err);
+  g.log.push({ ts, accion: `🔴 Error Revisión: ${motivo}`, user: g.receptor, tipo: 'error_rev', detalle });
+  saveDB(db);
+  autoSyncGuia(g);
+  closeModalErrRev();
+  toast('🔴', `Error de revisión registrado en guía ${g.guia}`);
+  renderActivos(); renderTablaHoy();
+}
+
+// ============================================================
+// ERROR SELLADO
+// ============================================================
+function abrirErrorSell(id) {
+  _errGuiaId = id;
+  document.getElementById('err-sell-motivo').value = '';
+  document.getElementById('err-sell-detalle').value = '';
+  document.getElementById('modal-err-sell').classList.add('open');
+}
+function closeModalErrSell() { document.getElementById('modal-err-sell').classList.remove('open'); _errGuiaId = null; }
+
+function confirmarErrorSell() {
+  const g = db.guias.find(x => x.id === _errGuiaId);
+  if (!g) return;
+  const motivo = document.getElementById('err-sell-motivo').value;
+  const detalle = document.getElementById('err-sell-detalle').value.trim();
+  if (!motivo) { toast('⚠️','Selecciona un motivo'); return; }
+
+  const ts = new Date().toISOString();
+  const err = { id: uid(), ts, motivo, detalle, prevencionista: g.receptor };
+  g.errores_sellado = g.errores_sellado || [];
+  g.errores_sellado.push(err);
+  g.log.push({ ts, accion: `🟣 Discrepancia Sellado: ${motivo}`, user: g.receptor, tipo: 'error_sell', detalle });
+  saveDB(db);
+  autoSyncGuia(g);
+  closeModalErrSell();
+  toast('🟣', `Discrepancia de sellado registrada en guía ${g.guia}`);
+  renderActivos(); renderTablaHoy();
+}
+
+// ============================================================
+// MODAL DETALLE GUIA
+// ============================================================
+function openGuia(id) {
+  const g = db.guias.find(x => x.id === id);
+  if (!g) return;
+  document.getElementById('modal-title').textContent = `Guía ${g.guia}`;
+
+  const f1 = g.t_revision ? elapsedMs(g.t_recepcion,g.t_revision) : elapsedMs(g.t_recepcion);
+  const f2 = g.t_revision&&g.t_prevencion ? elapsedMs(g.t_revision,g.t_prevencion) : (g.t_revision ? elapsedMs(g.t_revision) : 0);
+  const f3 = g.t_prevencion&&g.t_sellado ? elapsedMs(g.t_prevencion,g.t_sellado) : (g.t_prevencion ? elapsedMs(g.t_prevencion) : 0);
+  const totalMs = elapsedMs(g.t_recepcion, g.t_sellado);
+  const errR = g.errores_revision||[], errS = g.errores_sellado||[];
+
+  const errRevHTML = errR.length ? `
+    <div style="margin-bottom:16px">
+      <div class="section-title" style="color:var(--danger)">🔴 Errores en Revisión (${errR.length})</div>
+      ${errR.map(e=>`<div style="background:rgba(224,40,46,0.08);border:1px solid rgba(224,40,46,0.2);border-radius:8px;padding:12px;margin-bottom:8px">
+        <div style="font-size:13px;font-weight:700;color:var(--danger)">${e.motivo}</div>
+        ${e.detalle ? `<div style="font-size:12px;color:var(--text2);margin-top:4px">${e.detalle}</div>` : ''}
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:6px">${fmtDateTime(e.ts)} · ${e.prevencionista}</div>
+      </div>`).join('')}
+    </div>` : '';
+
+  const errSellHTML = errS.length ? `
+    <div style="margin-bottom:16px">
+      <div class="section-title" style="color:var(--purple)">🟣 Discrepancias en Sellado (${errS.length})</div>
+      ${errS.map(e=>`<div style="background:rgba(123,79,204,0.08);border:1px solid rgba(123,79,204,0.2);border-radius:8px;padding:12px;margin-bottom:8px">
+        <div style="font-size:13px;font-weight:700;color:var(--purple)">${e.motivo}</div>
+        ${e.detalle ? `<div style="font-size:12px;color:var(--text2);margin-top:4px">${e.detalle}</div>` : ''}
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:6px">${fmtDateTime(e.ts)} · ${e.prevencionista}</div>
+      </div>`).join('')}
+    </div>` : '';
+
+  document.getElementById('modal-body').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
+      <div><span style="font-family:var(--mono);font-size:10px;color:var(--text2);text-transform:uppercase">Patente</span><br><strong>${g.patente}</strong></div>
+      <div><span style="font-family:var(--mono);font-size:10px;color:var(--text2);text-transform:uppercase">Origen</span><br><strong>${g.origen}</strong></div>
+      <div><span style="font-family:var(--mono);font-size:10px;color:var(--text2);text-transform:uppercase">Destino</span><br><strong>${g.bultos||'—'}</strong></div>
+      <div><span style="font-family:var(--mono);font-size:10px;color:var(--text2);text-transform:uppercase">Prevencionista</span><br><strong>${g.receptor}</strong></div>
+      <div><span style="font-family:var(--mono);font-size:10px;color:var(--text2);text-transform:uppercase">Conductor</span><br><strong>${g.conductor||'—'}</strong></div>
+      <div><span style="font-family:var(--mono);font-size:10px;color:var(--text2);text-transform:uppercase">Estado</span><br>${estadoBadge(g)}</div>
+    </div>
+    ${g.obs ? `<div style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:20px;font-size:13px;color:var(--text2)">📝 ${g.obs}</div>` : ''}
+
+    <div class="section-title">⏱ Tiempos por Fase</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px">
+      <div style="background:var(--bg);border-radius:10px;padding:14px;text-align:center">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--text2);margin-bottom:6px">RECEP→REVISIÓN</div>
+        <div class="${alertaClass(f1,SLA.recepcion_a_revision)}" style="font-size:18px;font-weight:800">${fmtElapsed(f1)}</div>
+        <div style="font-size:10px;color:var(--text2)">SLA: ${SLA.recepcion_a_revision}min</div>
+      </div>
+      <div style="background:var(--bg);border-radius:10px;padding:14px;text-align:center">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--text2);margin-bottom:6px">REVISIÓN→PREV</div>
+        <div class="${g.t_revision?alertaClass(f2,SLA.revision_a_prevencion):''}" style="font-size:18px;font-weight:800">${g.t_revision?fmtElapsed(f2):'—'}</div>
+        <div style="font-size:10px;color:var(--text2)">SLA: ${SLA.revision_a_prevencion}min</div>
+      </div>
+      <div style="background:var(--bg);border-radius:10px;padding:14px;text-align:center">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--text2);margin-bottom:6px">PREV→SELLADO</div>
+        <div class="${g.t_prevencion?alertaClass(f3,SLA.prevencion_a_sellado):''}" style="font-size:18px;font-weight:800">${g.t_prevencion?fmtElapsed(f3):'—'}</div>
+        <div style="font-size:10px;color:var(--text2)">SLA: ${SLA.prevencion_a_sellado}min</div>
+      </div>
+    </div>
+
+    ${errRevHTML}${errSellHTML}
+
+    <div class="section-title">📅 Línea de Tiempo</div>
+    <div class="timeline-log">
+      ${g.log.map((l,i)=>`
+        <div class="log-item ${l.tipo==='error_rev'?'log-error':l.tipo==='error_sell'?'log-error-sell':''}">
+          <div class="log-dot-wrap">
+            <div class="log-dot" style="background:${l.tipo==='error_rev'?'var(--danger)':l.tipo==='error_sell'?'var(--purple)':'var(--accent)'}"></div>
+            ${i<g.log.length-1?'<div class="log-line"></div>':''}
+          </div>
+          <div class="log-content">
+            <div class="log-action">${l.accion}</div>
+            <div class="log-meta">${fmtDateTime(l.ts)} · ${l.user}</div>
+            ${l.detalle?`<div class="log-detail">${l.detalle}</div>`:''}
+          </div>
+        </div>`).join('')}
+    </div>
+
+    ${!g.t_sellado ? `
+    <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap">
+      ${!g.t_revision ? `
+        <button class="btn btn-primary" onclick="avanzar('${g.id}','revision');closeModal()">✔ Marcar Revisada</button>
+        <button class="btn btn-danger" onclick="closeModal();abrirErrorRev('${g.id}')">🔴 Error Revisión</button>
+      ` : ''}
+      ${g.t_revision&&!g.t_prevencion ? `<button class="btn btn-warn" onclick="avanzar('${g.id}','prevencion');closeModal()">🔒 Llamar Prevención</button>` : ''}
+      ${g.t_prevencion ? `
+        <button class="btn btn-success" onclick="avanzar('${g.id}','sellado');closeModal()">🔏 Sellar Camión</button>
+        <button class="btn btn-purple" onclick="closeModal();abrirErrorSell('${g.id}')">🟣 Discrepancia Sellado</button>
+      ` : ''}
+    </div>` : `
+    <div style="margin-top:16px;text-align:center;padding:16px;background:rgba(46,158,91,0.08);border-radius:10px;border:1px solid rgba(46,158,91,0.2)">
+      <div style="color:var(--accent3);font-weight:700;font-size:16px">✅ Proceso Completado</div>
+      <div style="font-family:var(--mono);font-size:11px;color:var(--text2);margin-top:4px">Tiempo total: ${fmtElapsed(totalMs)}</div>
+    </div>`}
+  `;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+document.getElementById('modal-overlay').addEventListener('click', e => { if(e.target===document.getElementById('modal-overlay')) closeModal(); });
+document.getElementById('modal-err-rev').addEventListener('click', e => { if(e.target===document.getElementById('modal-err-rev')) closeModalErrRev(); });
+document.getElementById('modal-err-sell').addEventListener('click', e => { if(e.target===document.getElementById('modal-err-sell')) closeModalErrSell(); });
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+function getFiltered() {
+  const desde = document.getElementById('f-desde').value;
+  const hasta = document.getElementById('f-hasta').value;
+  const origen = document.getElementById('f-origen-dash').value;
+  return db.guias.filter(g => {
+    if (desde && g.fecha < desde) return false;
+    if (hasta && g.fecha > hasta) return false;
+    if (origen && g.origen !== origen) return false;
+    return true;
+  });
+}
+function resetFiltros() {
+  document.getElementById('f-desde').value = '';
+  document.getElementById('f-hasta').value = todayStr();
+  document.getElementById('f-origen-dash').value = '';
+  renderDashboard();
+}
+
+function renderDashboard() {
+  const data = getFiltered();
+  const total = data.length;
+  const sellados = data.filter(g=>g.t_sellado).length;
+  const activos = data.filter(g=>!g.t_sellado).length;
+  const enPrevencion = data.filter(g=>g.t_prevencion&&!g.t_sellado).length;
+  const totalErrRev = data.reduce((s,g)=>s+(g.errores_revision||[]).length,0);
+  const totalErrSell = data.reduce((s,g)=>s+(g.errores_sellado||[]).length,0);
+
+  const ft = data.filter(g=>g.t_sellado).map(g=>({
+    f1: elapsedMs(g.t_recepcion,g.t_revision)/60000,
+    f2: elapsedMs(g.t_revision,g.t_prevencion)/60000,
+    f3: elapsedMs(g.t_prevencion,g.t_sellado)/60000,
+    total: elapsedMs(g.t_recepcion,g.t_sellado)/60000
+  }));
+  const avg = (arr,k) => arr.length ? (arr.reduce((s,v)=>s+v[k],0)/arr.length).toFixed(1) : 0;
+  const avgF1=avg(ft,'f1'), avgF2=avg(ft,'f2'), avgF3=avg(ft,'f3'), avgTotal=avg(ft,'total');
+  const fueraSLA = data.filter(g=>g.t_sellado&&elapsedMs(g.t_recepcion,g.t_sellado)>SLA.total*60000).length;
+  const slaRate = sellados ? Math.round((1-fueraSLA/sellados)*100) : 100;
+
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card c1"><div class="stat-label">Total Guías</div><div class="stat-value" style="color:var(--accent)">${total}</div><div class="stat-sub">en el período</div></div>
+    <div class="stat-card c3"><div class="stat-label">Selladas</div><div class="stat-value" style="color:var(--accent3)">${sellados}</div><div class="stat-sub">${total?Math.round(sellados/total*100):0}% completadas</div></div>
+    <div class="stat-card c2"><div class="stat-label">En Proceso</div><div class="stat-value" style="color:var(--accent2)">${activos}</div><div class="stat-sub">${enPrevencion} en prevención</div></div>
+    <div class="stat-card c4"><div class="stat-label">T. Promedio Total</div><div class="stat-value" style="color:var(--warn)">${avgTotal}<span style="font-size:18px">m</span></div><div class="stat-sub">SLA: ${SLA.total} min</div></div>
+    <div class="stat-card c5"><div class="stat-label">Errores Revisión</div><div class="stat-value" style="color:var(--danger)">${totalErrRev}</div><div class="stat-sub">devoluciones</div></div>
+    <div class="stat-card c6"><div class="stat-label">Discrepancias Sellado</div><div class="stat-value" style="color:var(--purple)">${totalErrSell}</div><div class="stat-sub">problemas físico/guía</div></div>
+  `;
+
+  // Chart fases
+  document.getElementById('chart-fases').innerHTML = [
+    {label:'Recep→Revisión',val:avgF1,sla:SLA.recepcion_a_revision,color:'var(--accent)'},
+    {label:'Revisión→Prev.',val:avgF2,sla:SLA.revision_a_prevencion,color:'var(--accent2)'},
+    {label:'Prev.→Sellado',val:avgF3,sla:SLA.prevencion_a_sellado,color:'var(--accent3)'},
+    {label:'Total',val:avgTotal,sla:SLA.total,color:'var(--warn)'},
+  ].map(r=>{
+    const pct=Math.min((r.val/(r.sla*1.5))*100,100), over=r.val>r.sla;
+    return `<div class="bar-row"><div class="bar-label">${r.label}</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${over?'var(--danger)':r.color}"></div></div><div class="bar-val" style="color:${over?'var(--danger)':'var(--text2)'}">${r.val}m</div></div>`;
+  }).join('');
+
+  // Donut
+  const estados = [
+    {label:'Selladas',count:sellados,hex:'#2E9E5B'},
+    {label:'Recepcionadas',count:data.filter(g=>!g.t_revision&&!g.t_sellado).length,hex:'#FF6B35'},
+    {label:'En Revisión',count:data.filter(g=>g.t_revision&&!g.t_prevencion&&!g.t_sellado).length,hex:'#0058A3'},
+    {label:'En Prevención',count:enPrevencion,hex:'#E8A800'},
+  ].filter(e=>e.count>0);
+  const totalE = estados.reduce((s,e)=>s+e.count,0)||1;
+  let cumAngle=-90; const cx=60,cy=60,r=45,stroke=18;
+  const paths=estados.map(e=>{
+    const da=e.count/totalE*360, sa=cumAngle*Math.PI/180; cumAngle+=da; const ea=cumAngle*Math.PI/180;
+    const x1=cx+r*Math.cos(sa),y1=cy+r*Math.sin(sa),x2=cx+r*Math.cos(ea),y2=cy+r*Math.sin(ea);
+    return `<path d="M ${x1} ${y1} A ${r} ${r} 0 ${da>180?1:0} 1 ${x2} ${y2}" fill="none" stroke="${e.hex}" stroke-width="${stroke}" stroke-linecap="butt"/>`;
+  }).join('');
+  document.getElementById('donut-svg').innerHTML = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#c9d6e8" stroke-width="${stroke}"/>${paths}<text x="${cx}" y="${cy-6}" text-anchor="middle" fill="#111c2e" font-size="16" font-weight="800" font-family="Syne">${total}</text><text x="${cx}" y="${cy+10}" text-anchor="middle" fill="#5b7090" font-size="9" font-family="Space Mono">GUÍAS</text>`;
+  document.getElementById('donut-legend').innerHTML = estados.map(e=>`<div class="legend-item"><div class="legend-dot" style="background:${e.hex}"></div>${e.label}: <strong>${e.count}</strong></div>`).join('');
+
+  // Chart origen
+  const origenes={};
+  data.forEach(g=>{origenes[g.origen]=(origenes[g.origen]||0)+1;});
+  const maxO=Math.max(...Object.values(origenes),1);
+  const colOrig=['var(--accent)','var(--accent2)','var(--accent3)','var(--warn)','var(--danger)'];
+  document.getElementById('chart-origen').innerHTML=Object.entries(origenes).map(([k,v],i)=>
+    `<div class="bar-row"><div class="bar-label">${k}</div><div class="bar-track"><div class="bar-fill" style="width:${v/maxO*100}%;background:${colOrig[i%5]}"></div></div><div class="bar-val">${v}</div></div>`
+  ).join('')||'<div style="color:var(--text2);font-size:13px;text-align:center;padding:20px">Sin datos</div>';
+
+  // Chart SLA
+  const slaPorFase=[
+    {label:'Recep→Revisión',ok:data.filter(g=>g.t_revision&&elapsedMs(g.t_recepcion,g.t_revision)<=SLA.recepcion_a_revision*60000).length,total:data.filter(g=>g.t_revision).length},
+    {label:'Revis→Prev.',ok:data.filter(g=>g.t_prevencion&&elapsedMs(g.t_revision,g.t_prevencion)<=SLA.revision_a_prevencion*60000).length,total:data.filter(g=>g.t_prevencion).length},
+    {label:'Prev→Sellado',ok:data.filter(g=>g.t_sellado&&elapsedMs(g.t_prevencion,g.t_sellado)<=SLA.prevencion_a_sellado*60000).length,total:data.filter(g=>g.t_sellado).length},
+  ];
+  document.getElementById('chart-sla').innerHTML=slaPorFase.map(s=>{
+    const pct=s.total?Math.round(s.ok/s.total*100):0, col=pct>=90?'var(--accent3)':pct>=70?'var(--warn)':'var(--danger)';
+    return `<div class="bar-row"><div class="bar-label">${s.label}</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${col}"></div></div><div class="bar-val" style="color:${col}">${pct}%</div></div>`;
+  }).join('');
+
+  renderTablaHistorial(data);
+}
+
+function renderTablaHistorial(data) {
+  const sorted=[...data].reverse();
+  const tbody=document.getElementById('tabla-historial');
+  if (!sorted.length) { tbody.innerHTML=`<tr><td colspan="13"><div class="empty-state"><div class="empty-icon">📊</div><h3>Sin datos</h3></div></td></tr>`; return; }
+  tbody.innerHTML=sorted.map(g=>{
+    const f1=g.t_revision?fmtElapsed(elapsedMs(g.t_recepcion,g.t_revision)):'—';
+    const f2=g.t_prevencion?fmtElapsed(elapsedMs(g.t_revision,g.t_prevencion)):'—';
+    const f3=g.t_sellado?fmtElapsed(elapsedMs(g.t_prevencion,g.t_sellado)):'—';
+    const total=g.t_sellado?fmtElapsed(elapsedMs(g.t_recepcion,g.t_sellado)):fmtElapsed(elapsedMs(g.t_recepcion));
+    const cls=g.t_sellado?'elapsed-ok':alertaClass(elapsedMs(g.t_recepcion),SLA.total);
+    const er=(g.errores_revision||[]).length, es=(g.errores_sellado||[]).length;
+    const rowCls=es?'row-error-sellado':er?'row-error-revision':'';
+    return `<tr class="${rowCls}">
+      <td style="font-family:var(--mono);font-size:11px">${fmtDate(g.t_recepcion)}</td>
+      <td style="font-family:var(--mono);font-size:12px"><strong>${g.guia}</strong></td>
+      <td style="font-family:var(--mono);font-size:11px">${g.patente}</td>
+      <td style="font-size:12px">${g.origen}</td>
+      <td style="font-size:12px">${g.bultos||'—'}</td>
+      <td style="font-size:12px">${g.receptor}</td>
+      <td style="font-family:var(--mono);font-size:11px">${f1}</td>
+      <td style="font-family:var(--mono);font-size:11px">${f2}</td>
+      <td style="font-family:var(--mono);font-size:11px">${f3}</td>
+      <td class="${cls}" style="font-family:var(--mono);font-size:11px">${total}</td>
+      <td>${er?`<span class="badge badge-err-rev">🔴 ${er}</span>`:'<span style="color:var(--text2)">0</span>'}</td>
+      <td>${es?`<span class="badge badge-err-sell">🟣 ${es}</span>`:'<span style="color:var(--text2)">0</span>'}</td>
+      <td>${estadoBadge(g)}</td>
+      <td style="text-align:center">
+        <button class="btn btn-danger btn-sm" style="padding:5px 10px;font-size:11px" onclick="solicitarEliminar('${g.id}','${g.guia}')">🗑 Eliminar</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ============================================================
+// PANEL ERRORES
+// ============================================================
+function getErrFiltered() {
+  const desde = document.getElementById('fe-desde').value;
+  const hasta = document.getElementById('fe-hasta').value;
+  const tipo = document.getElementById('fe-tipo').value;
+  const prev = document.getElementById('fe-prev').value;
+  return db.guias.filter(g => {
+    if (desde && g.fecha < desde) return false;
+    if (hasta && g.fecha > hasta) return false;
+    if (prev) {
+      const hasR = (g.errores_revision||[]).some(e=>e.prevencionista===prev);
+      const hasS = (g.errores_sellado||[]).some(e=>e.prevencionista===prev);
+      if (!hasR && !hasS) return false;
+    }
+    if (tipo === 'revision' && !(g.errores_revision||[]).length) return false;
+    if (tipo === 'sellado' && !(g.errores_sellado||[]).length) return false;
+    return true;
+  });
+}
+function resetFiltrosErr() {
+  document.getElementById('fe-desde').value='';
+  document.getElementById('fe-hasta').value=todayStr();
+  document.getElementById('fe-tipo').value='';
+  document.getElementById('fe-prev').value='';
+  renderErrores();
+}
+
+function renderErrores() {
+  const data = getErrFiltered();
+  const prevFilt = document.getElementById('fe-prev').value;
+
+  // Recolectar todos los errores individuales
+  let allErrRev=[], allErrSell=[];
+  data.forEach(g=>{
+    (g.errores_revision||[]).forEach(e=>{ if(!prevFilt||e.prevencionista===prevFilt) allErrRev.push({...e,guia:g.guia,patente:g.patente,origen:g.origen,destino:g.bultos,fecha:g.fecha}); });
+    (g.errores_sellado||[]).forEach(e=>{ if(!prevFilt||e.prevencionista===prevFilt) allErrSell.push({...e,guia:g.guia,patente:g.patente,origen:g.origen,destino:g.bultos,fecha:g.fecha}); });
+  });
+
+  const totalR=allErrRev.length, totalS=allErrSell.length;
+
+  // STATS
+  const guiasConErrR=data.filter(g=>(g.errores_revision||[]).length).length;
+  const guiasConErrS=data.filter(g=>(g.errores_sellado||[]).length).length;
+  const tasaErrores = data.length ? Math.round((guiasConErrR+guiasConErrS)/data.length*100) : 0;
+
+  document.getElementById('err-stats-grid').innerHTML=`
+    <div class="stat-card c5"><div class="stat-label">Errores Revisión</div><div class="stat-value" style="color:var(--danger)">${totalR}</div><div class="stat-sub">${guiasConErrR} guías afectadas</div></div>
+    <div class="stat-card c6"><div class="stat-label">Discrepancias Sellado</div><div class="stat-value" style="color:var(--purple)">${totalS}</div><div class="stat-sub">${guiasConErrS} guías afectadas</div></div>
+    <div class="stat-card c4"><div class="stat-label">Total Incidencias</div><div class="stat-value" style="color:var(--warn)">${totalR+totalS}</div><div class="stat-sub">en el período</div></div>
+    <div class="stat-card c${tasaErrores<=5?'3':tasaErrores<=15?'4':'5'}"><div class="stat-label">Tasa de Error</div><div class="stat-value" style="color:var(--${tasaErrores<=5?'accent3':tasaErrores<=15?'warn':'danger'})">${tasaErrores}%</div><div class="stat-sub">guías con incidencias</div></div>
+  `;
+
+  // Chart motivos revisión
+  const motivosRev={};
+  allErrRev.forEach(e=>{motivosRev[e.motivo]=(motivosRev[e.motivo]||0)+1;});
+  const maxMR=Math.max(...Object.values(motivosRev),1);
+  document.getElementById('err-chart-rev').innerHTML=Object.entries(motivosRev).sort((a,b)=>b[1]-a[1]).map(([k,v])=>
+    `<div class="bar-row"><div class="bar-label" style="width:160px;font-size:10px">${k.length>22?k.substr(0,22)+'…':k}</div><div class="bar-track"><div class="bar-fill" style="width:${v/maxMR*100}%;background:var(--danger)"></div></div><div class="bar-val">${v}</div></div>`
+  ).join('')||'<div style="color:var(--text2);font-size:13px;text-align:center;padding:20px">Sin errores</div>';
+
+  // Chart motivos sellado
+  const motivosSell={};
+  allErrSell.forEach(e=>{motivosSell[e.motivo]=(motivosSell[e.motivo]||0)+1;});
+  const maxMS=Math.max(...Object.values(motivosSell),1);
+  document.getElementById('err-chart-sell').innerHTML=Object.entries(motivosSell).sort((a,b)=>b[1]-a[1]).map(([k,v])=>
+    `<div class="bar-row"><div class="bar-label" style="width:160px;font-size:10px">${k.length>22?k.substr(0,22)+'…':k}</div><div class="bar-track"><div class="bar-fill" style="width:${v/maxMS*100}%;background:var(--purple)"></div></div><div class="bar-val">${v}</div></div>`
+  ).join('')||'<div style="color:var(--text2);font-size:13px;text-align:center;padding:20px">Sin discrepancias</div>';
+
+  // Chart por prevencionista
+  const byPrev={};
+  [...allErrRev,...allErrSell].forEach(e=>{byPrev[e.prevencionista]=(byPrev[e.prevencionista]||0)+1;});
+  const maxBP=Math.max(...Object.values(byPrev),1);
+  document.getElementById('err-chart-prev').innerHTML=Object.entries(byPrev).sort((a,b)=>b[1]-a[1]).map(([k,v])=>
+    `<div class="bar-row"><div class="bar-label" style="width:160px;font-size:10px">${k.split(' ')[0]} ${k.split(' ')[1]||''}</div><div class="bar-track"><div class="bar-fill" style="width:${v/maxBP*100}%;background:var(--warn)"></div></div><div class="bar-val">${v}</div></div>`
+  ).join('')||'<div style="color:var(--text2);font-size:13px;text-align:center;padding:20px">Sin datos</div>';
+
+  // Chart por origen
+  const byOrig={};
+  [...allErrRev,...allErrSell].forEach(e=>{byOrig[e.origen]=(byOrig[e.origen]||0)+1;});
+  const maxBO=Math.max(...Object.values(byOrig),1);
+  const colOrig=['var(--accent)','var(--accent2)','var(--accent3)'];
+  document.getElementById('err-chart-orig').innerHTML=Object.entries(byOrig).sort((a,b)=>b[1]-a[1]).map(([k,v],i)=>
+    `<div class="bar-row"><div class="bar-label">${k}</div><div class="bar-track"><div class="bar-fill" style="width:${v/maxBO*100}%;background:${colOrig[i%3]}"></div></div><div class="bar-val">${v}</div></div>`
+  ).join('')||'<div style="color:var(--text2);font-size:13px;text-align:center;padding:20px">Sin datos</div>';
+
+  // Tablas
+  document.getElementById('count-err-rev').textContent=totalR;
+  document.getElementById('count-err-sell').textContent=totalS;
+
+  document.getElementById('tabla-err-rev').innerHTML=allErrRev.length?allErrRev.sort((a,b)=>new Date(b.ts)-new Date(a.ts)).map(e=>`
+    <tr class="row-error-revision">
+      <td style="font-family:var(--mono);font-size:11px">${fmtDate(e.ts)}</td>
+      <td style="font-family:var(--mono);font-size:12px"><strong>${e.guia}</strong></td>
+      <td style="font-family:var(--mono);font-size:11px">${e.patente}</td>
+      <td style="font-size:12px">${e.origen}</td>
+      <td style="font-size:12px">${e.destino||'—'}</td>
+      <td style="font-size:12px">${e.prevencionista}</td>
+      <td><span class="badge badge-err-rev">${e.motivo.length>30?e.motivo.substr(0,30)+'…':e.motivo}</span></td>
+      <td style="font-size:12px;color:var(--text2);max-width:200px">${e.detalle||'—'}</td>
+      <td style="font-family:var(--mono);font-size:11px">${fmtTime(e.ts)}</td>
+    </tr>`).join('')
+    :`<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">🔴</div><h3>Sin errores de revisión</h3></div></td></tr>`;
+
+  document.getElementById('tabla-err-sell').innerHTML=allErrSell.length?allErrSell.sort((a,b)=>new Date(b.ts)-new Date(a.ts)).map(e=>`
+    <tr class="row-error-sellado">
+      <td style="font-family:var(--mono);font-size:11px">${fmtDate(e.ts)}</td>
+      <td style="font-family:var(--mono);font-size:12px"><strong>${e.guia}</strong></td>
+      <td style="font-family:var(--mono);font-size:11px">${e.patente}</td>
+      <td style="font-size:12px">${e.origen}</td>
+      <td style="font-size:12px">${e.destino||'—'}</td>
+      <td style="font-size:12px">${e.prevencionista}</td>
+      <td><span class="badge badge-err-sell">${e.motivo.length>30?e.motivo.substr(0,30)+'…':e.motivo}</span></td>
+      <td style="font-size:12px;color:var(--text2);max-width:200px">${e.detalle||'—'}</td>
+      <td style="font-family:var(--mono);font-size:11px">${fmtTime(e.ts)}</td>
+    </tr>`).join('')
+    :`<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">🟣</div><h3>Sin discrepancias de sellado</h3></div></td></tr>`;
+}
+
+// ============================================================
+// CSV EXPORT
+// ============================================================
+function exportarCSV() {
+  const data = getFiltered();
+  const headers=['Fecha','N° Guía','Patente','Origen','Destino','Conductor','Prevencionista','T_Recepcion','T_Revision','T_Prevencion','T_Sellado','Min_F1','Min_F2','Min_F3','Min_Total','Err_Revision','Err_Sellado','Estado'];
+  const rows=data.map(g=>[
+    g.fecha,g.guia,g.patente,g.origen,g.bultos||'',g.conductor,g.receptor,
+    fmtDateTime(g.t_recepcion),fmtDateTime(g.t_revision),fmtDateTime(g.t_prevencion),fmtDateTime(g.t_sellado),
+    g.t_revision?(elapsedMs(g.t_recepcion,g.t_revision)/60000).toFixed(1):'',
+    g.t_prevencion?(elapsedMs(g.t_revision,g.t_prevencion)/60000).toFixed(1):'',
+    g.t_sellado?(elapsedMs(g.t_prevencion,g.t_sellado)/60000).toFixed(1):'',
+    g.t_sellado?(elapsedMs(g.t_recepcion,g.t_sellado)/60000).toFixed(1):'',
+    (g.errores_revision||[]).length,
+    (g.errores_sellado||[]).length,
+    estadoLabel(g)
+  ]);
+  const csv=[headers,...rows].map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=`guias_${todayStr()}.csv`; a.click(); URL.revokeObjectURL(url);
+  toast('⬇','CSV exportado');
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+function toast(icon, msg) {
+  const el=document.getElementById('toast');
+  document.getElementById('toast-icon').textContent=icon;
+  document.getElementById('toast-msg').textContent=msg;
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),3500);
+}
+
+// ============================================================
+// LIVE REFRESH
+// ============================================================
+setInterval(()=>{
+  if(document.getElementById('page-activos').classList.contains('active')) renderActivos();
+  if(document.getElementById('page-registro').classList.contains('active')) renderTablaHoy();
+},30000);
+
+// ============================================================
+// INIT
+// ============================================================
+(function init(){
+  const hoy=todayStr();
+  document.getElementById('f-hasta').value=hoy;
+  document.getElementById('fe-hasta').value=hoy;
+  const hace30=new Date(); hace30.setDate(hace30.getDate()-30);
+  document.getElementById('f-desde').value=hace30.toISOString().split('T')[0];
+  document.getElementById('fe-desde').value=hace30.toISOString().split('T')[0];
+  renderTablaHoy();
+  updateSyncIndicator();
+})();
+
+// ============================================================
+// SLA ALERT ENGINE — 5-minute warning per active guide
+// ============================================================
+const _slaAlertDismissed = new Set(); // dismissed ids per session
+
+function buildAlertPanel() {
+  let panel = document.getElementById('sla-alert-panel');
+  if (!panel) {
+    panel = document.createElement('div');
+    panel.id = 'sla-alert-panel';
+    document.body.appendChild(panel);
+  }
+  return panel;
+}
+
+function slaSecondsLeft(g) {
+  // Time remaining until SLA breach (total SLA from reception)
+  const slaMs = SLA.total * 60 * 1000;
+  const elapsedMs2 = new Date() - new Date(g.t_recepcion);
+  return Math.round((slaMs - elapsedMs2) / 1000);
+}
+
+function fmtCountdown(secs) {
+  const abs = Math.abs(secs);
+  const m = Math.floor(abs / 60);
+  const s = abs % 60;
+  const sign = secs < 0 ? '-' : '';
+  return sign + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+}
+
+function checkSLAAlerts() {
+  const panel = buildAlertPanel();
+  const WARN_SECS = 5 * 60; // alert 5 minutes before breach
+
+  // Active (unsealed) guides
+  const activos = db.guias.filter(g => !g.t_sellado);
+  const toAlert  = activos.filter(g => {
+    const secsLeft = slaSecondsLeft(g);
+    return secsLeft <= WARN_SECS; // 5 min or less remaining (includes overdue)
+  });
+
+  // Update or create cards
+  const existingIds = new Set([...panel.querySelectorAll('.sla-alert-card')].map(c => c.dataset.id));
+  const alertIds = new Set(toAlert.map(g => g.id));
+
+  // Remove cards for guides that no longer need alert (sealed or back under threshold - unlikely but safe)
+  [...panel.querySelectorAll('.sla-alert-card')].forEach(card => {
+    if (!alertIds.has(card.dataset.id)) card.remove();
+  });
+
+  // Add/update cards
+  let navCount = 0;
+  toAlert.forEach(g => {
+    if (_slaAlertDismissed.has(g.id)) return;
+    navCount++;
+    const secsLeft = slaSecondsLeft(g);
+    const overdue = secsLeft < 0;
+    const critical = secsLeft <= 60; // under 1 min: critical pulse
+    const timerClass = critical ? '' : 'amber';
+    const timerLabel = overdue
+      ? `VENCIDA ${fmtCountdown(secsLeft)}`
+      : fmtCountdown(secsLeft);
+
+    let card = panel.querySelector(`.sla-alert-card[data-id="${g.id}"]`);
+    if (!card) {
+      card = document.createElement('div');
+      card.className = 'sla-alert-card' + (critical ? ' critical' : '');
+      card.dataset.id = g.id;
+      card.innerHTML = buildAlertCardHTML(g, timerLabel, timerClass, critical, overdue);
+      panel.appendChild(card);
+      // Sound nudge (beep via Web Audio if available)
+      playSLABeep(overdue);
+    } else {
+      // Just update timer + state
+      card.className = 'sla-alert-card' + (critical ? ' critical' : '');
+      const timerEl = card.querySelector('.sla-alert-timer');
+      if (timerEl) { timerEl.className = 'sla-alert-timer ' + timerClass; timerEl.textContent = timerLabel; }
+      const titleEl = card.querySelector('.sla-alert-title');
+      if (titleEl) titleEl.textContent = overdue ? '🚨 SLA VENCIDA' : '⚠️ SLA próxima a vencer';
+    }
+  });
+
+  // Nav badge
+  updateNavBadge(navCount);
+}
+
+function buildAlertCardHTML(g, timerLabel, timerClass, critical, overdue) {
+  return `
+    <button class="sla-close" onclick="dismissSLAAlert('${g.id}')" title="Descartar alerta">×</button>
+    <div class="sla-alert-icon">${overdue ? '🚨' : '⏰'}</div>
+    <div class="sla-alert-body">
+      <div class="sla-alert-title">${overdue ? '🚨 SLA VENCIDA' : '⚠️ SLA próxima a vencer'}</div>
+      <div class="sla-alert-guia">${g.guia}</div>
+      <div class="sla-alert-meta">${g.patente} · ${g.origen} · ${g.receptor}</div>
+      <div class="sla-alert-timer ${timerClass}">${timerLabel}</div>
+      <div class="sla-alert-actions">
+        <button class="sla-btn sla-btn-primary" onclick="irAGuia('${g.id}')">Ver Guía</button>
+        <button class="sla-btn sla-btn-dismiss" onclick="dismissSLAAlert('${g.id}')">Descartar</button>
+      </div>
+    </div>
+  `;
+}
+
+function dismissSLAAlert(id) {
+  _slaAlertDismissed.add(id);
+  const card = document.querySelector(`.sla-alert-card[data-id="${id}"]`);
+  if (card) {
+    card.style.transition = 'all 0.3s ease';
+    card.style.transform = 'translateX(-120%)';
+    card.style.opacity = '0';
+    setTimeout(() => card.remove(), 300);
+  }
+  updateNavBadge(document.querySelectorAll('.sla-alert-card').length - 1);
+}
+
+function irAGuia(id) {
+  showPage('activos');
+  setTimeout(() => openGuia(id), 100);
+}
+
+function updateNavBadge(count) {
+  document.querySelectorAll('.sla-nav-badge').forEach(b => b.remove());
+  if (count > 0) {
+    document.querySelectorAll('.nav-tab').forEach(t => {
+      if (t.textContent.toLowerCase().includes('activo')) {
+        const badge = document.createElement('span');
+        badge.className = 'sla-nav-badge';
+        badge.textContent = count;
+        t.appendChild(badge);
+      }
+    });
+  }
+}
+
+function playSLABeep(overdue) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const freqs = overdue ? [880, 660, 880] : [660, 880];
+    freqs.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.18, ctx.currentTime + i * 0.18);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.18 + 0.16);
+      osc.start(ctx.currentTime + i * 0.18);
+      osc.stop(ctx.currentTime + i * 0.18 + 0.18);
+    });
+  } catch(e) {}
+}
+
+// Run every second for live countdown
+setInterval(checkSLAAlerts, 1000);
+
+// ============================================================
+// DELETE RECORD — PIN 2114
+// ============================================================
+const DEL_PIN = '2114';
+let _delPinBuffer = '';
+let _delPinAttempts = 0;
+let _delGuiaId = null;
+const DEL_MAX_ATTEMPTS = 3;
+
+function solicitarEliminar(id, guiaNum) {
+  _delGuiaId = id;
+  _delPinBuffer = '';
+  _delPinAttempts = 0;
+  updateDelDots();
+  document.getElementById('del-pin-error').style.display = 'none';
+  document.getElementById('del-pin-attempts').textContent = '';
+  document.getElementById('del-pin-numpad').style.pointerEvents = 'auto';
+  document.getElementById('del-pin-numpad').style.opacity = '1';
+  document.getElementById('del-guia-label').textContent = 'Guía N° ' + guiaNum;
+  document.getElementById('modal-del').classList.add('open');
+}
+
+function closeDeleteModal() {
+  _delGuiaId = null;
+  _delPinBuffer = '';
+  document.getElementById('modal-del').classList.remove('open');
+}
+
+function delPinKey(digit) {
+  if (_delPinBuffer.length >= 4) return;
+  _delPinBuffer += digit;
+  updateDelDots();
+  if (_delPinBuffer.length === 4) setTimeout(delPinConfirm, 200);
+}
+
+function delPinClear() {
+  _delPinBuffer = _delPinBuffer.slice(0, -1);
+  updateDelDots();
+  document.getElementById('del-pin-error').style.display = 'none';
+}
+
+function updateDelDots() {
+  for (let i = 0; i < 4; i++) {
+    const dot = document.getElementById('del-dot-' + i);
+    if (!dot) return;
+    dot.style.cssText = '';
+    dot.className = 'pin-dot' + (i < _delPinBuffer.length ? ' filled' : '');
+  }
+}
+
+function delPinConfirm() {
+  if (_delPinBuffer.length === 0) return;
+
+  if (_delPinBuffer === DEL_PIN) {
+    // ✅ Correct — flash green then delete
+    for (let i = 0; i < 4; i++) {
+      const dot = document.getElementById('del-dot-' + i);
+      dot.style.background = 'var(--accent3)';
+      dot.style.borderColor = 'var(--accent3)';
+      dot.style.boxShadow = '0 0 12px rgba(46,158,91,0.6)';
+    }
+    setTimeout(() => {
+      const id = _delGuiaId;
+      closeDeleteModal();
+      ejecutarEliminar(id);
+    }, 500);
+  } else {
+    // ❌ Wrong PIN
+    _delPinAttempts++;
+    _delPinBuffer = '';
+    for (let i = 0; i < 4; i++) {
+      const dot = document.getElementById('del-dot-' + i);
+      dot.className = 'pin-dot error';
+    }
+    setTimeout(updateDelDots, 600);
+
+    const errEl = document.getElementById('del-pin-error');
+    errEl.style.display = 'block';
+    errEl.style.animation = 'none';
+    setTimeout(() => { errEl.style.animation = 'pinShake 0.4s ease'; }, 10);
+
+    const left = DEL_MAX_ATTEMPTS - _delPinAttempts;
+    if (left <= 0) {
+      document.getElementById('del-pin-attempts').textContent = '\uD83D\uDD12 Acceso bloqueado.';
+      document.getElementById('del-pin-numpad').style.pointerEvents = 'none';
+      document.getElementById('del-pin-numpad').style.opacity = '0.3';
+    } else {
+      document.getElementById('del-pin-attempts').textContent = 'Intentos restantes: ' + left;
+    }
+  }
+}
+
+function ejecutarEliminar(id) {
+  const idx = db.guias.findIndex(g => g.id === id);
+  if (idx === -1) { toast('\u26A0\uFE0F', 'Registro no encontrado'); return; }
+  const guiaNum = db.guias[idx].guia;
+  const guiaIdToDelete = db.guias[idx].id;
+  db.guias.splice(idx, 1);
+  saveDB(db);
+  autoSyncDelete(guiaIdToDelete);
+  // Animate row out
+  const row = document.querySelector(`button[onclick*="${id}"]`);
+  if (row) {
+    const tr = row.closest('tr');
+    if (tr) {
+      tr.style.transition = 'all 0.4s ease';
+      tr.style.opacity = '0';
+      tr.style.transform = 'translateX(40px)';
+      setTimeout(() => { renderTablaHistorial(getFiltered()); renderDashboard(); }, 420);
+    }
+  } else {
+    renderTablaHistorial(getFiltered());
+    renderDashboard();
+  }
+  toast('🗑', 'Registro de guía ' + guiaNum + ' eliminado');
+}
+
+// Keyboard support for delete modal
+document.addEventListener('keydown', function(e) {
+  if (!document.getElementById('modal-del').classList.contains('open')) return;
+  if (e.key >= '0' && e.key <= '9') delPinKey(e.key);
+  if (e.key === 'Backspace') delPinClear();
+  if (e.key === 'Enter') delPinConfirm();
+  if (e.key === 'Escape') closeDeleteModal();
+});
+
+document.getElementById('modal-del').addEventListener('click', function(e) {
+  if (e.target === this) closeDeleteModal();
+});
+
+// ============================================================
+// PIN SECURITY MODAL
+// ============================================================
+const PIN_CORRECT = '1855';
+let _pinBuffer = '';
+let _pinAttempts = 0;
+let _pinCallback = null;
+const MAX_ATTEMPTS = 5;
+
+function openPinModal(callback) {
+  _pinCallback = callback;
+  _pinBuffer = '';
+  updatePinDots();
+  document.getElementById('pin-error').style.display = 'none';
+  document.getElementById('pin-attempts').textContent = '';
+  document.getElementById('pin-numpad').style.pointerEvents = 'auto';
+  document.getElementById('pin-numpad').style.opacity = '1';
+  document.getElementById('modal-pin').classList.add('open');
+}
+function closePinModal() {
+  _pinBuffer = '';
+  _pinCallback = null;
+  document.getElementById('modal-pin').classList.remove('open');
+}
+
+function pinKey(digit) {
+  if (_pinBuffer.length >= 4) return;
+  _pinBuffer += digit;
+  updatePinDots();
+  if (_pinBuffer.length === 4) setTimeout(pinConfirm, 200);
+}
+
+function pinClear() {
+  _pinBuffer = _pinBuffer.slice(0, -1);
+  updatePinDots();
+  document.getElementById('pin-error').style.display = 'none';
+}
+
+function updatePinDots() {
+  for (let i = 0; i < 4; i++) {
+    const dot = document.getElementById('pin-dot-' + i);
+    if (!dot) return;
+    dot.style.cssText = '';
+    dot.className = 'pin-dot' + (i < _pinBuffer.length ? ' filled' : '');
+  }
+}
+
+function pinConfirm() {
+  if (_pinBuffer.length === 0) return;
+  if (_pinBuffer === PIN_CORRECT) {
+    for (let i = 0; i < 4; i++) {
+      const dot = document.getElementById('pin-dot-' + i);
+      dot.style.background = 'var(--accent3)';
+      dot.style.borderColor = 'var(--accent3)';
+      dot.style.boxShadow = '0 0 12px rgba(46,158,91,0.6)';
+    }
+    setTimeout(() => {
+      closePinModal();
+      if (_pinCallback) { _pinCallback(); _pinCallback = null; }
+    }, 500);
+  } else {
+    _pinAttempts++;
+    _pinBuffer = '';
+    for (let i = 0; i < 4; i++) {
+      const dot = document.getElementById('pin-dot-' + i);
+      dot.className = 'pin-dot error';
+    }
+    setTimeout(updatePinDots, 600);
+    const errEl = document.getElementById('pin-error');
+    errEl.style.display = 'block';
+    errEl.style.animation = 'none';
+    setTimeout(() => { errEl.style.animation = 'pinShake 0.4s ease'; }, 10);
+    const attemptsLeft = MAX_ATTEMPTS - _pinAttempts;
+    if (attemptsLeft <= 0) {
+      document.getElementById('pin-attempts').textContent = '\uD83D\uDD12 Acceso bloqueado. Recarga la página.';
+      document.getElementById('pin-numpad').style.pointerEvents = 'none';
+      document.getElementById('pin-numpad').style.opacity = '0.3';
+    } else {
+      document.getElementById('pin-attempts').textContent = 'Intentos restantes: ' + attemptsLeft;
+    }
+  }
+}
+
+// Keyboard support
+document.addEventListener('keydown', function(e) {
+  if (!document.getElementById('modal-pin').classList.contains('open')) return;
+  if (e.key >= '0' && e.key <= '9') pinKey(e.key);
+  if (e.key === 'Backspace') pinClear();
+  if (e.key === 'Enter') pinConfirm();
+  if (e.key === 'Escape') closePinModal();
+});
+
+// Wrap resetFiltros with PIN gate
+const _origResetFiltros = resetFiltros;
+function resetFiltros() {
+  openPinModal(function() {
+    document.getElementById('f-desde').value = '';
+    document.getElementById('f-hasta').value = todayStr();
+    document.getElementById('f-origen-dash').value = '';
+    renderDashboard();
+    toast('\u2705', 'Filtros restablecidos correctamente');
+  });
+}
+
+// Wrap resetFiltrosErr with PIN gate
+const _origResetFiltrosErr = resetFiltrosErr;
+function resetFiltrosErr() {
+  openPinModal(function() {
+    document.getElementById('fe-desde').value = '';
+    document.getElementById('fe-hasta').value = todayStr();
+    document.getElementById('fe-tipo').value = '';
+    document.getElementById('fe-prev').value = '';
+    renderErrores();
+    toast('\u2705', 'Filtros restablecidos correctamente');
+  });
+}
+
+document.getElementById('modal-pin').addEventListener('click', function(e) {
+  if (e.target === this) closePinModal();
+});
+
+</script>
+</body>
+</html>
