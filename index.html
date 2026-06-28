@@ -165,6 +165,7 @@
     .badge-reviewing { background: rgba(0,88,163,0.10); color: var(--accent); border: 1px solid rgba(0,88,163,0.3); }
     .badge-waiting { background: rgba(232,168,0,0.12); color: var(--warn); border: 1px solid rgba(232,168,0,0.3); }
     .badge-sealed { background: rgba(46,158,91,0.12); color: var(--accent3); border: 1px solid rgba(46,158,91,0.3); }
+    .badge-closed { background: rgba(91,112,144,0.15); color: var(--text2); border: 1px solid rgba(91,112,144,0.35); }
     .badge-alert { background: rgba(224,40,46,0.15); color: var(--danger); border: 1px solid rgba(224,40,46,0.3); }
     .badge-err-rev { background: rgba(224,40,46,0.18); color: var(--danger); border: 1px solid rgba(224,40,46,0.4); }
     .badge-err-sell { background: rgba(123,79,204,0.18); color: var(--purple); border: 1px solid rgba(123,79,204,0.4); }
@@ -476,7 +477,6 @@
             <option>IPA</option>
             <option>IPO</option>
             <option>CT'S</option>
-            <option>Vacío</option>
             <option>CD1</option>
             <option>CD2</option>
             <option>CD3</option>
@@ -497,6 +497,7 @@
             <option>Bernardo Aguilar</option>
             <option>Edgar Marquez</option>
             <option>Jonathan Martinez</option>
+            <option>Constanza Araya</option>
           </select>
         </div>
       </div>
@@ -614,7 +615,7 @@
           <option>Johannellsy Perez</option><option>Edward Perez</option><option>Marco Arteaga</option>
           <option>Elias Peñaloza</option><option>Maira Hosein</option><option>Gabriel de la Piedra</option>
           <option>Ambar Zambrano</option><option>Andres Rodriguez</option><option>Bernardo Aguilar</option>
-          <option>Edgar Marquez</option><option>Jonathan Martinez</option>
+          <option>Edgar Marquez</option><option>Jonathan Martinez</option><option>Constanza Araya</option>
         </select>
       </div>
       <button class="btn btn-primary btn-sm" onclick="renderErrores()">🔍 Filtrar</button>
@@ -661,6 +662,28 @@
           <tr><th>Fecha</th><th>N° Guía</th><th>Patente</th><th>Origen</th><th>Destino</th><th>Prevencionista</th><th>Motivo</th><th>Detalle</th><th>Hora Error</th></tr>
         </thead>
         <tbody id="tabla-err-sell"></tbody>
+      </table>
+    </div>
+
+    <!-- DASHBOARD PÉRDIDA DE TIEMPO OPERACIONAL -->
+    <div class="dash-section">
+      <span style="font-size:20px">⏳</span>
+      <div class="dash-section-title" style="color:var(--warn)">Pérdida de Tiempo Operacional</div>
+      <span class="dash-section-badge" style="background:rgba(232,168,0,0.15);color:var(--warn)" id="count-obs-op">0</span>
+    </div>
+    <div style="background:rgba(232,168,0,0.06);border:1px dashed rgba(232,168,0,0.35);border-radius:10px;padding:12px 14px;margin-bottom:20px;font-size:12px;color:var(--text2)">
+      ℹ️ Estas observaciones <strong>no afectan</strong> el avance ni el cierre del sellado. Son un registro informativo de demoras operacionales fuera del control directo del equipo de Prevención de Pérdidas.
+    </div>
+    <div class="charts-row">
+      <div class="chart-card"><div class="chart-title">⏳ Motivos de Demora Operacional</div><div class="bar-chart" id="obs-op-chart-motivo"></div></div>
+      <div class="chart-card"><div class="chart-title">👤 Demoras por Prevencionista</div><div class="bar-chart" id="obs-op-chart-prev"></div></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Fecha</th><th>N° Guía</th><th>Patente</th><th>Origen</th><th>Destino</th><th>Prevencionista</th><th>Motivo</th><th>Detalle</th><th>Hora</th></tr>
+        </thead>
+        <tbody id="tabla-obs-op"></tbody>
       </table>
     </div>
   </div>
@@ -787,7 +810,7 @@
     <div class="modal-body">
 
       <div style="background:rgba(0,88,163,0.06);border:1px solid rgba(0,88,163,0.2);border-radius:10px;padding:14px;margin-bottom:20px;font-size:12px;color:var(--text2);line-height:1.6">
-        📋 Pega aquí la <strong>URL del Web App</strong> de tu Google Apps Script (la obtienes al implementar el script que te entregamos). Una vez conectada, cada guía registrada se enviará automáticamente a tu planilla.
+        📋 Pega aquí la <strong>URL del Web App</strong> de tu Google Apps Script. Una vez conectada, cada guía registrada se enviará automáticamente a tu planilla, y al abrir la app en <strong>cualquier PC o celular</strong> se descargarán los registros hechos desde otros dispositivos.
       </div>
 
       <div class="field" style="margin-bottom:16px">
@@ -799,7 +822,8 @@
 
       <div class="btn-group">
         <button class="btn btn-primary" onclick="guardarYProbarSync()">🔗 Conectar y Probar</button>
-        <button class="btn btn-success" onclick="sincronizarTodoAhora()">🔄 Sincronizar Todo Ahora</button>
+        <button class="btn btn-warn" onclick="descargarDeSheets()">⬇️ Descargar de Sheets</button>
+        <button class="btn btn-success" onclick="sincronizarTodoAhora()">⬆️ Subir Todo Ahora</button>
         <button class="btn btn-ghost" onclick="desconectarSync()">Desconectar</button>
       </div>
 
@@ -837,13 +861,8 @@
           <label>Motivo del Error / Devolución</label>
           <select id="err-rev-motivo">
             <option value="">Seleccionar motivo...</option>
-            <option>Guía no corresponde a la carga</option>
-            <option>Diferencia en cantidad de productos</option>
-            <option>Productos no declarados en guía</option>
-            <option>Guía ilegible o incompleta</option>
-            <option>Datos del remitente incorrectos</option>
-            <option>Guía duplicada</option>
-            <option>Sellos rotos o irregulares</option>
+            <option>Sello físico no corresponde con la guía</option>
+            <option>Nombre del conductor no coincide</option>
             <option>Otro</option>
           </select>
         </div>
@@ -852,8 +871,18 @@
           <textarea id="err-rev-detalle" placeholder="Describe el error con el mayor detalle posible..." oninput="toUpperPreserveCaret(this)"></textarea>
         </div>
       </div>
+
+      <div style="background:rgba(224,40,46,0.06);border:1px dashed rgba(224,40,46,0.35);border-radius:10px;padding:14px;margin-top:6px;margin-bottom:16px">
+        <div style="font-size:12px;font-weight:700;color:var(--danger);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">¿Qué deseas hacer con esta guía?</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.5">
+          <strong>Registrar y mantener activa</strong>: el error queda anotado pero la guía sigue en proceso (ej. se corrige en el momento).<br>
+          <strong>Cerrar proceso — Guía devuelta</strong>: la guía física se devuelve al equipo de origen y este registro se cierra. Se rehará con un N° de guía nuevo.
+        </div>
+      </div>
+
       <div class="btn-group">
-        <button class="btn btn-danger" onclick="confirmarErrorRev()">🔴 Confirmar Devolución</button>
+        <button class="btn btn-danger" onclick="confirmarErrorRev(false)">🔴 Registrar y Mantener Activa</button>
+        <button class="btn btn-purple" onclick="confirmarErrorRev(true)">📦 Cerrar Proceso — Guía Devuelta</button>
         <button class="btn btn-ghost" onclick="closeModalErrRev()">Cancelar</button>
       </div>
     </div>
@@ -874,13 +903,10 @@
           <label>Motivo de la Discrepancia</label>
           <select id="err-sell-motivo">
             <option value="">Seleccionar motivo...</option>
-            <option>Carga física no coincide con guía</option>
-            <option>Productos en exceso no declarados</option>
-            <option>Productos faltantes respecto a guía</option>
-            <option>Sello del camión manipulado</option>
-            <option>Camión con carga ajena</option>
-            <option>N° de sello no corresponde</option>
-            <option>Carga dañada o en mal estado</option>
+            <option>Error de patente física vs guía</option>
+            <option>Falta de precinto</option>
+            <option>No posee patente física pero se gestiona correo</option>
+            <option>Conductor no corresponde al de la guía</option>
             <option>Otro</option>
           </select>
         </div>
@@ -889,9 +915,57 @@
           <textarea id="err-sell-detalle" placeholder="Describe la discrepancia encontrada..." oninput="toUpperPreserveCaret(this)"></textarea>
         </div>
       </div>
+
+      <div style="background:rgba(123,79,204,0.06);border:1px dashed rgba(123,79,204,0.35);border-radius:10px;padding:14px;margin-top:6px;margin-bottom:16px">
+        <div style="font-size:12px;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">¿Qué deseas hacer con esta guía?</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.5">
+          <strong>Registrar y mantener activa</strong>: la discrepancia queda anotada pero la guía sigue en proceso (ej. se corrige en el momento).<br>
+          <strong>Cerrar proceso — Guía devuelta</strong>: la guía física se devuelve al equipo de origen y este registro se cierra. Se rehará con un N° de guía nuevo.
+        </div>
+      </div>
+
       <div class="btn-group">
-        <button class="btn btn-purple" onclick="confirmarErrorSell()">🟣 Confirmar Discrepancia</button>
+        <button class="btn btn-purple" onclick="confirmarErrorSell(false)">🟣 Registrar y Mantener Activa</button>
+        <button class="btn btn-danger" onclick="confirmarErrorSell(true)">📦 Cerrar Proceso — Guía Devuelta</button>
         <button class="btn btn-ghost" onclick="closeModalErrSell()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL OBSERVACIÓN OPERACIONAL (no afecta el sellado) -->
+<div class="modal-overlay" id="modal-obs-op">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" style="display:flex;align-items:center;gap:10px;color:var(--warn)">
+          <span style="font-size:22px">⏳</span> Observación Operacional
+        </div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text2);letter-spacing:1.5px;text-transform:uppercase;margin-top:4px">Solo registro — no afecta el proceso de sellado</div>
+      </div>
+      <button class="modal-close" onclick="closeModalObsOp()">×</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--text2);margin-bottom:20px">Registra demoras o pérdida de tiempo operacional de tu equipo durante el sellado. Esta observación queda guardada para el dashboard, pero <strong>no detiene ni modifica</strong> el avance de la guía.</p>
+      <div class="form-grid" style="grid-template-columns:1fr">
+        <div class="field">
+          <label>Motivo de la Demora</label>
+          <select id="obs-op-motivo">
+            <option value="">Seleccionar motivo...</option>
+            <option>Camión aun en proceso de carga</option>
+            <option>Camion sin estar despegado del anden</option>
+            <option>Contenedor sin posicionar</option>
+            <option>Otro</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Descripción adicional (opcional)</label>
+          <textarea id="obs-op-detalle" placeholder="Detalles adicionales sobre la demora..." oninput="toUpperPreserveCaret(this)"></textarea>
+        </div>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-warn" onclick="confirmarObsOperacional()">⏳ Registrar Observación</button>
+        <button class="btn btn-ghost" onclick="closeModalObsOp()">Cancelar</button>
       </div>
     </div>
   </div>
@@ -986,15 +1060,80 @@ async function guardarYProbarSync() {
     });
     const data = await res.json();
     if (data && data.status === 'ok') {
-      showSyncStatus('✅ Conexión exitosa. Sincronizando datos existentes...', 'ok');
+      showSyncStatus('✅ Conexión exitosa. Descargando datos del Sheet...', 'ok');
       updateSyncIndicator();
+      await descargarDeSheets(true);
       await sincronizarTodoAhora(true);
+      showSyncStatus('✅ Conectado y sincronizado en ambas direcciones', 'ok');
     } else {
       showSyncStatus('⚠️ Respuesta inesperada del servidor. Verifica el script.', 'err');
     }
   } catch (e) {
     showSyncStatus('❌ No se pudo conectar. Verifica la URL y que el script esté implementado como "Cualquier usuario".', 'err');
   }
+}
+
+// ============================================================
+// DESCARGAR DE SHEETS — fusiona datos remotos con los locales
+// ============================================================
+async function descargarDeSheets(silent) {
+  const url = getSyncUrl();
+  if (!url) { if (!silent) toast('⚠️', 'Primero conecta tu Google Sheet'); return; }
+  if (!silent) showSyncStatus('⬇️ Descargando registros del Sheet...', 'info');
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'fetchAll' })
+    });
+    const data = await res.json();
+    if (data && data.status === 'ok' && Array.isArray(data.guias)) {
+      mergeGuiasRemotas(data.guias);
+      renderTablaHoy();
+      if (document.getElementById('page-activos').classList.contains('active')) renderActivos();
+      if (document.getElementById('page-dashboard').classList.contains('active')) renderDashboard();
+      if (document.getElementById('page-errores').classList.contains('active')) renderErrores();
+      if (!silent) showSyncStatus('✅ ' + data.guias.length + ' registros descargados y combinados', 'ok');
+      else toast('⬇️', data.guias.length + ' registros traídos de Google Sheets');
+    } else {
+      if (!silent) showSyncStatus('⚠️ No se pudieron obtener los datos remotos', 'err');
+    }
+  } catch (e) {
+    if (!silent) showSyncStatus('❌ Error al descargar de Google Sheets', 'err');
+  }
+}
+
+// Combina guias remotas con las locales: por ID, conserva la versión con más información
+// (prioriza el log local si existe, y completa cualquier guía que solo exista en el Sheet)
+function mergeGuiasRemotas(remotas) {
+  const localById = {};
+  db.guias.forEach(g => { localById[g.id] = g; });
+
+  remotas.forEach(rg => {
+    const local = localById[rg.id];
+    if (!local) {
+      // No existe localmente -> la agregamos tal cual viene del Sheet
+      if (!rg.log) rg.log = [];
+      db.guias.push(rg);
+    } else {
+      // Existe en ambos lados -> nos quedamos con los timestamps más "avanzados"
+      // y conservamos el log local (más detallado) si lo tiene
+      local.t_revision = local.t_revision || rg.t_revision;
+      local.t_prevencion = local.t_prevencion || rg.t_prevencion;
+      local.t_sellado = local.t_sellado || rg.t_sellado;
+      if ((!local.errores_revision || !local.errores_revision.length) && rg.errores_revision && rg.errores_revision.length) {
+        local.errores_revision = rg.errores_revision;
+      }
+      if ((!local.errores_sellado || !local.errores_sellado.length) && rg.errores_sellado && rg.errores_sellado.length) {
+        local.errores_sellado = rg.errores_sellado;
+      }
+      if ((!local.observaciones_operacionales || !local.observaciones_operacionales.length) && rg.observaciones_operacionales && rg.observaciones_operacionales.length) {
+        local.observaciones_operacionales = rg.observaciones_operacionales;
+      }
+    }
+  });
+
+  saveDB(db);
 }
 
 async function sincronizarTodoAhora(silent) {
@@ -1078,6 +1217,7 @@ function todayStr() { return new Date().toISOString().split('T')[0]; }
 const SLA = { recepcion_a_revision:10, revision_a_prevencion:20, prevencion_a_sellado:15, total:15 };
 
 function estadoLabel(g) {
+  if (g.cerrada) return g.cierre_motivo === 'sellado' ? 'Devuelta (Sellado)' : 'Devuelta (Revisión)';
   if (g.t_sellado) return 'Sellado';
   if (g.t_prevencion) return 'En Prevención';
   if (g.t_revision) return 'En Revisión';
@@ -1093,7 +1233,8 @@ function estadoBadge(g) {
   ].filter(Boolean).join(' ');
 
   let main = '';
-  if (g.t_sellado) main = `<span class="badge badge-sealed"><span class="dot dot-sealed"></span>Sellado</span>`;
+  if (g.cerrada) main = `<span class="badge badge-closed">📦 Devuelta</span>`;
+  else if (g.t_sellado) main = `<span class="badge badge-sealed"><span class="dot dot-sealed"></span>Sellado</span>`;
   else if (g.t_prevencion) main = `<span class="badge badge-waiting"><span class="dot dot-waiting"></span>En Prevención</span>`;
   else if (g.t_revision) main = `<span class="badge badge-reviewing"><span class="dot dot-reviewing"></span>En Revisión</span>`;
   else main = `<span class="badge badge-pending"><span class="dot dot-pending"></span>Recepcionado</span>`;
@@ -1178,7 +1319,7 @@ function registrarGuia() {
     id: uid(), fecha: hoy, guia, patente, origen, conductor, bultos, receptor, obs,
     t_recepcion: new Date().toISOString(),
     t_revision: null, t_prevencion: null, t_sellado: null,
-    errores_revision: [], errores_sellado: [],
+    errores_revision: [], errores_sellado: [], observaciones_operacionales: [],
     log: [{ ts: new Date().toISOString(), accion: 'Guía recepcionada', user: receptor, tipo: 'ok' }]
   };
   db.guias.push(registro);
@@ -1205,11 +1346,13 @@ function renderTablaHoy() {
     return;
   }
   tbody.innerHTML = guiasHoy.map(g => {
-    const total = elapsedMs(g.t_recepcion, g.t_sellado);
-    const totalStr = g.t_sellado ? fmtElapsed(total) : fmtElapsed(elapsedMs(g.t_recepcion));
-    const cls = g.t_sellado ? 'elapsed-ok' : alertaClass(elapsedMs(g.t_recepcion), SLA.total);
+    const finalizada = g.t_sellado || g.cerrada;
+    const tFin = g.t_sellado || g.t_cierre;
+    const total = elapsedMs(g.t_recepcion, tFin);
+    const totalStr = finalizada ? fmtElapsed(total) : fmtElapsed(elapsedMs(g.t_recepcion));
+    const cls = finalizada ? (g.cerrada ? '' : 'elapsed-ok') : alertaClass(elapsedMs(g.t_recepcion), SLA.total);
     const errR = (g.errores_revision||[]).length, errS = (g.errores_sellado||[]).length;
-    const rowCls = errS ? 'row-error-sellado' : errR ? 'row-error-revision' : '';
+    const rowCls = g.cerrada ? 'row-error-sellado' : (errS ? 'row-error-sellado' : errR ? 'row-error-revision' : '');
     return `<tr class="${rowCls}">
       <td style="font-family:var(--mono);font-size:12px"><strong>${g.guia}</strong></td>
       <td style="font-family:var(--mono);font-size:12px">${g.patente}</td>
@@ -1228,7 +1371,7 @@ function renderTablaHoy() {
 // ACTIVOS
 // ============================================================
 function renderActivos() {
-  const activos = db.guias.filter(g => !g.t_sellado).slice().reverse();
+  const activos = db.guias.filter(g => !g.t_sellado && !g.cerrada).slice().reverse();
   const container = document.getElementById('activos-container');
   if (!activos.length) {
     container.innerHTML = `<div class="empty-state"><div class="empty-icon">⚡</div><h3>Sin guías activas</h3><p>Todas las guías han sido selladas</p></div>`;
@@ -1244,6 +1387,7 @@ function renderActivos() {
     const p3cls = p2done ? 'active-phase' : '';
     const alerta = elapsedMs(g.t_recepcion) > SLA.total * 60000 * 1.2;
     const errR = (g.errores_revision||[]).length, errS = (g.errores_sellado||[]).length;
+    const obsOp = (g.observaciones_operacionales||[]).length;
 
     return `
     <div class="form-card" style="margin-bottom:20px;${alerta?'border-color:var(--danger)':''}${errS?'border-color:var(--purple)':''}">
@@ -1258,6 +1402,7 @@ function renderActivos() {
           ${alerta ? '<span class="badge badge-alert">⚠ FUERA SLA</span>' : ''}
           ${errR ? `<span class="badge badge-err-rev">🔴 ${errR} error rev.</span>` : ''}
           ${errS ? `<span class="badge badge-err-sell">🟣 ${errS} discrepancia sell.</span>` : ''}
+          ${obsOp ? `<span class="badge" style="background:rgba(232,168,0,0.15);color:var(--warn);border:1px solid rgba(232,168,0,0.35)">⏳ ${obsOp} obs. operacional</span>` : ''}
           ${estadoBadge(g)}
           <button class="btn btn-ghost btn-sm" onclick="openGuia('${g.id}')">Ver Detalle</button>
         </div>
@@ -1291,6 +1436,7 @@ function renderActivos() {
           ${p2done ? `
             <button class="btn btn-success btn-sm" style="margin-top:10px;width:100%" onclick="avanzar('${g.id}','sellado')">🔏 Camión Sellado</button>
             <button class="btn btn-purple btn-sm" style="margin-top:6px;width:100%" onclick="abrirErrorSell('${g.id}')">🟣 Discrepancia</button>
+            <button class="btn btn-warn btn-sm" style="margin-top:6px;width:100%" onclick="abrirObsOperacional('${g.id}')">⏳ Observación Operacional</button>
           ` : ''}
         </div>
       </div>
@@ -1325,7 +1471,7 @@ function abrirErrorRev(id) {
 }
 function closeModalErrRev() { document.getElementById('modal-err-rev').classList.remove('open'); _errGuiaId = null; }
 
-function confirmarErrorRev() {
+function confirmarErrorRev(cerrarProceso) {
   const g = db.guias.find(x => x.id === _errGuiaId);
   if (!g) return;
   const motivo = document.getElementById('err-rev-motivo').value;
@@ -1337,10 +1483,22 @@ function confirmarErrorRev() {
   g.errores_revision = g.errores_revision || [];
   g.errores_revision.push(err);
   g.log.push({ ts, accion: `🔴 Error Revisión: ${motivo}`, user: g.receptor, tipo: 'error_rev', detalle });
+
+  if (cerrarProceso) {
+    g.cerrada = true;
+    g.cierre_motivo = 'revision';
+    g.t_cierre = ts;
+    g.log.push({ ts, accion: '📦 Proceso cerrado — Guía física devuelta al equipo de origen', user: g.receptor, tipo: 'cierre' });
+  }
+
   saveDB(db);
   autoSyncGuia(g);
   closeModalErrRev();
-  toast('🔴', `Error de revisión registrado en guía ${g.guia}`);
+  if (cerrarProceso) {
+    toast('📦', `Guía ${g.guia} devuelta — proceso cerrado`);
+  } else {
+    toast('🔴', `Error de revisión registrado en guía ${g.guia}`);
+  }
   renderActivos(); renderTablaHoy();
 }
 
@@ -1355,7 +1513,7 @@ function abrirErrorSell(id) {
 }
 function closeModalErrSell() { document.getElementById('modal-err-sell').classList.remove('open'); _errGuiaId = null; }
 
-function confirmarErrorSell() {
+function confirmarErrorSell(cerrarProceso) {
   const g = db.guias.find(x => x.id === _errGuiaId);
   if (!g) return;
   const motivo = document.getElementById('err-sell-motivo').value;
@@ -1367,12 +1525,61 @@ function confirmarErrorSell() {
   g.errores_sellado = g.errores_sellado || [];
   g.errores_sellado.push(err);
   g.log.push({ ts, accion: `🟣 Discrepancia Sellado: ${motivo}`, user: g.receptor, tipo: 'error_sell', detalle });
+
+  if (cerrarProceso) {
+    g.cerrada = true;
+    g.cierre_motivo = 'sellado';
+    g.t_cierre = ts;
+    g.log.push({ ts, accion: '📦 Proceso cerrado — Guía física devuelta al equipo de origen', user: g.receptor, tipo: 'cierre' });
+  }
+
   saveDB(db);
   autoSyncGuia(g);
   closeModalErrSell();
-  toast('🟣', `Discrepancia de sellado registrada en guía ${g.guia}`);
+  if (cerrarProceso) {
+    toast('📦', `Guía ${g.guia} devuelta — proceso cerrado`);
+  } else {
+    toast('🟣', `Discrepancia de sellado registrada en guía ${g.guia}`);
+  }
   renderActivos(); renderTablaHoy();
 }
+
+// ============================================================
+// OBSERVACIÓN OPERACIONAL — registro informativo, no bloquea el sellado
+// ============================================================
+let _obsOpGuiaId = null;
+
+function abrirObsOperacional(id) {
+  _obsOpGuiaId = id;
+  document.getElementById('obs-op-motivo').value = '';
+  document.getElementById('obs-op-detalle').value = '';
+  document.getElementById('modal-obs-op').classList.add('open');
+}
+function closeModalObsOp() { document.getElementById('modal-obs-op').classList.remove('open'); _obsOpGuiaId = null; }
+
+function confirmarObsOperacional() {
+  const g = db.guias.find(x => x.id === _obsOpGuiaId);
+  if (!g) return;
+  const motivo = document.getElementById('obs-op-motivo').value;
+  const detalle = document.getElementById('obs-op-detalle').value.trim();
+  if (!motivo) { toast('⚠️','Selecciona un motivo'); return; }
+
+  const ts = new Date().toISOString();
+  const obs = { id: uid(), ts, motivo, detalle, prevencionista: g.receptor };
+  g.observaciones_operacionales = g.observaciones_operacionales || [];
+  g.observaciones_operacionales.push(obs);
+  g.log.push({ ts, accion: `⏳ Observación Operacional: ${motivo}`, user: g.receptor, tipo: 'obs_operacional', detalle });
+
+  saveDB(db);
+  autoSyncGuia(g);
+  closeModalObsOp();
+  toast('⏳', `Observación registrada en guía ${g.guia}`);
+  renderActivos(); renderTablaHoy();
+}
+
+document.getElementById('modal-obs-op').addEventListener('click', function(e) {
+  if (e.target === this) closeModalObsOp();
+});
 
 // ============================================================
 // MODAL DETALLE GUIA
@@ -1408,6 +1615,17 @@ function openGuia(id) {
       </div>`).join('')}
     </div>` : '';
 
+  const obsOp = g.observaciones_operacionales || [];
+  const obsOpHTML = obsOp.length ? `
+    <div style="margin-bottom:16px">
+      <div class="section-title" style="color:var(--warn)">⏳ Observaciones Operacionales (${obsOp.length})</div>
+      ${obsOp.map(e=>`<div style="background:rgba(232,168,0,0.08);border:1px solid rgba(232,168,0,0.25);border-radius:8px;padding:12px;margin-bottom:8px">
+        <div style="font-size:13px;font-weight:700;color:var(--warn)">${e.motivo}</div>
+        ${e.detalle ? `<div style="font-size:12px;color:var(--text2);margin-top:4px">${e.detalle}</div>` : ''}
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:6px">${fmtDateTime(e.ts)} · ${e.prevencionista}</div>
+      </div>`).join('')}
+    </div>` : '';
+
   document.getElementById('modal-body').innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
       <div><span style="font-family:var(--mono);font-size:10px;color:var(--text2);text-transform:uppercase">Patente</span><br><strong>${g.patente}</strong></div>
@@ -1438,7 +1656,7 @@ function openGuia(id) {
       </div>
     </div>
 
-    ${errRevHTML}${errSellHTML}
+    ${errRevHTML}${errSellHTML}${obsOpHTML}
 
     <div class="section-title">📅 Línea de Tiempo</div>
     <div class="timeline-log">
@@ -1456,7 +1674,14 @@ function openGuia(id) {
         </div>`).join('')}
     </div>
 
-    ${!g.t_sellado ? `
+    ${g.cerrada ? `
+    <div style="margin-top:16px;text-align:center;padding:16px;background:rgba(91,112,144,0.1);border-radius:10px;border:1px solid rgba(91,112,144,0.3)">
+      <div style="color:var(--text2);font-weight:700;font-size:16px">📦 Proceso Cerrado — Guía Devuelta</div>
+      <div style="font-family:var(--mono);font-size:11px;color:var(--text2);margin-top:4px">
+        Motivo del cierre: ${g.cierre_motivo === 'sellado' ? 'discrepancia en sellado' : 'error en revisión'} · ${fmtDateTime(g.t_cierre)}
+      </div>
+      <div style="font-size:12px;color:var(--text2);margin-top:8px">La guía física fue devuelta al equipo de origen. Debe rehacerse con un N° de guía nuevo.</div>
+    </div>` : !g.t_sellado ? `
     <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap">
       ${!g.t_revision ? `
         <button class="btn btn-primary" onclick="avanzar('${g.id}','revision');closeModal()">✔ Marcar Revisada</button>
@@ -1466,6 +1691,7 @@ function openGuia(id) {
       ${g.t_prevencion ? `
         <button class="btn btn-success" onclick="avanzar('${g.id}','sellado');closeModal()">🔏 Sellar Camión</button>
         <button class="btn btn-purple" onclick="closeModal();abrirErrorSell('${g.id}')">🟣 Discrepancia Sellado</button>
+        <button class="btn btn-warn" onclick="closeModal();abrirObsOperacional('${g.id}')">⏳ Observación Operacional</button>
       ` : ''}
     </div>` : `
     <div style="margin-top:16px;text-align:center;padding:16px;background:rgba(46,158,91,0.08);border-radius:10px;border:1px solid rgba(46,158,91,0.2)">
@@ -1505,8 +1731,9 @@ function renderDashboard() {
   const data = getFiltered();
   const total = data.length;
   const sellados = data.filter(g=>g.t_sellado).length;
-  const activos = data.filter(g=>!g.t_sellado).length;
-  const enPrevencion = data.filter(g=>g.t_prevencion&&!g.t_sellado).length;
+  const cerradas = data.filter(g=>g.cerrada).length;
+  const activos = data.filter(g=>!g.t_sellado&&!g.cerrada).length;
+  const enPrevencion = data.filter(g=>g.t_prevencion&&!g.t_sellado&&!g.cerrada).length;
   const totalErrRev = data.reduce((s,g)=>s+(g.errores_revision||[]).length,0);
   const totalErrSell = data.reduce((s,g)=>s+(g.errores_sellado||[]).length,0);
 
@@ -1528,6 +1755,7 @@ function renderDashboard() {
     <div class="stat-card c4"><div class="stat-label">T. Promedio Total</div><div class="stat-value" style="color:var(--warn)">${avgTotal}<span style="font-size:18px">m</span></div><div class="stat-sub">SLA: ${SLA.total} min</div></div>
     <div class="stat-card c5"><div class="stat-label">Errores Revisión</div><div class="stat-value" style="color:var(--danger)">${totalErrRev}</div><div class="stat-sub">devoluciones</div></div>
     <div class="stat-card c6"><div class="stat-label">Discrepancias Sellado</div><div class="stat-value" style="color:var(--purple)">${totalErrSell}</div><div class="stat-sub">problemas físico/guía</div></div>
+    <div class="stat-card"><div class="stat-label">Guías Devueltas</div><div class="stat-value" style="color:var(--text2)">${cerradas}</div><div class="stat-sub">proceso cerrado — rehechas</div></div>
   `;
 
   // Chart fases
@@ -1586,13 +1814,15 @@ function renderTablaHistorial(data) {
   const tbody=document.getElementById('tabla-historial');
   if (!sorted.length) { tbody.innerHTML=`<tr><td colspan="13"><div class="empty-state"><div class="empty-icon">📊</div><h3>Sin datos</h3></div></td></tr>`; return; }
   tbody.innerHTML=sorted.map(g=>{
+    const finalizada = g.t_sellado || g.cerrada;
+    const tFin = g.t_sellado || g.t_cierre;
     const f1=g.t_revision?fmtElapsed(elapsedMs(g.t_recepcion,g.t_revision)):'—';
     const f2=g.t_prevencion?fmtElapsed(elapsedMs(g.t_revision,g.t_prevencion)):'—';
     const f3=g.t_sellado?fmtElapsed(elapsedMs(g.t_prevencion,g.t_sellado)):'—';
-    const total=g.t_sellado?fmtElapsed(elapsedMs(g.t_recepcion,g.t_sellado)):fmtElapsed(elapsedMs(g.t_recepcion));
-    const cls=g.t_sellado?'elapsed-ok':alertaClass(elapsedMs(g.t_recepcion),SLA.total);
+    const total=finalizada?fmtElapsed(elapsedMs(g.t_recepcion,tFin)):fmtElapsed(elapsedMs(g.t_recepcion));
+    const cls=finalizada?(g.cerrada?'':'elapsed-ok'):alertaClass(elapsedMs(g.t_recepcion),SLA.total);
     const er=(g.errores_revision||[]).length, es=(g.errores_sellado||[]).length;
-    const rowCls=es?'row-error-sellado':er?'row-error-revision':'';
+    const rowCls=g.cerrada?'row-error-sellado':(es?'row-error-sellado':er?'row-error-revision':'');
     return `<tr class="${rowCls}">
       <td style="font-family:var(--mono);font-size:11px">${fmtDate(g.t_recepcion)}</td>
       <td style="font-family:var(--mono);font-size:12px"><strong>${g.guia}</strong></td>
@@ -1648,10 +1878,11 @@ function renderErrores() {
   const prevFilt = document.getElementById('fe-prev').value;
 
   // Recolectar todos los errores individuales
-  let allErrRev=[], allErrSell=[];
+  let allErrRev=[], allErrSell=[], allObsOp=[];
   data.forEach(g=>{
     (g.errores_revision||[]).forEach(e=>{ if(!prevFilt||e.prevencionista===prevFilt) allErrRev.push({...e,guia:g.guia,patente:g.patente,origen:g.origen,destino:g.bultos,fecha:g.fecha}); });
     (g.errores_sellado||[]).forEach(e=>{ if(!prevFilt||e.prevencionista===prevFilt) allErrSell.push({...e,guia:g.guia,patente:g.patente,origen:g.origen,destino:g.bultos,fecha:g.fecha}); });
+    (g.observaciones_operacionales||[]).forEach(e=>{ if(!prevFilt||e.prevencionista===prevFilt) allObsOp.push({...e,guia:g.guia,patente:g.patente,origen:g.origen,destino:g.bultos,fecha:g.fecha}); });
   });
 
   const totalR=allErrRev.length, totalS=allErrSell.length;
@@ -1732,6 +1963,37 @@ function renderErrores() {
       <td style="font-family:var(--mono);font-size:11px">${fmtTime(e.ts)}</td>
     </tr>`).join('')
     :`<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">🟣</div><h3>Sin discrepancias de sellado</h3></div></td></tr>`;
+
+  // ── PÉRDIDA DE TIEMPO OPERACIONAL ──
+  document.getElementById('count-obs-op').textContent = allObsOp.length;
+
+  const motivosObs={};
+  allObsOp.forEach(e=>{motivosObs[e.motivo]=(motivosObs[e.motivo]||0)+1;});
+  const maxMO=Math.max(...Object.values(motivosObs),1);
+  document.getElementById('obs-op-chart-motivo').innerHTML=Object.entries(motivosObs).sort((a,b)=>b[1]-a[1]).map(([k,v])=>
+    `<div class="bar-row"><div class="bar-label" style="width:160px;font-size:10px">${k.length>22?k.substr(0,22)+'…':k}</div><div class="bar-track"><div class="bar-fill" style="width:${v/maxMO*100}%;background:var(--warn)"></div></div><div class="bar-val">${v}</div></div>`
+  ).join('')||'<div style="color:var(--text2);font-size:13px;text-align:center;padding:20px">Sin observaciones</div>';
+
+  const byPrevObs={};
+  allObsOp.forEach(e=>{byPrevObs[e.prevencionista]=(byPrevObs[e.prevencionista]||0)+1;});
+  const maxBPO=Math.max(...Object.values(byPrevObs),1);
+  document.getElementById('obs-op-chart-prev').innerHTML=Object.entries(byPrevObs).sort((a,b)=>b[1]-a[1]).map(([k,v])=>
+    `<div class="bar-row"><div class="bar-label" style="width:160px;font-size:10px">${k.split(' ')[0]} ${k.split(' ')[1]||''}</div><div class="bar-track"><div class="bar-fill" style="width:${v/maxBPO*100}%;background:var(--accent2)"></div></div><div class="bar-val">${v}</div></div>`
+  ).join('')||'<div style="color:var(--text2);font-size:13px;text-align:center;padding:20px">Sin datos</div>';
+
+  document.getElementById('tabla-obs-op').innerHTML=allObsOp.length?allObsOp.sort((a,b)=>new Date(b.ts)-new Date(a.ts)).map(e=>`
+    <tr style="background:rgba(232,168,0,0.05)">
+      <td style="font-family:var(--mono);font-size:11px">${fmtDate(e.ts)}</td>
+      <td style="font-family:var(--mono);font-size:12px"><strong>${e.guia}</strong></td>
+      <td style="font-family:var(--mono);font-size:11px">${e.patente}</td>
+      <td style="font-size:12px">${e.origen}</td>
+      <td style="font-size:12px">${e.destino||'—'}</td>
+      <td style="font-size:12px">${e.prevencionista}</td>
+      <td><span class="badge" style="background:rgba(232,168,0,0.15);color:var(--warn);border:1px solid rgba(232,168,0,0.35)">${e.motivo.length>30?e.motivo.substr(0,30)+'…':e.motivo}</span></td>
+      <td style="font-size:12px;color:var(--text2);max-width:200px">${e.detalle||'—'}</td>
+      <td style="font-family:var(--mono);font-size:11px">${fmtTime(e.ts)}</td>
+    </tr>`).join('')
+    :`<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">⏳</div><h3>Sin observaciones operacionales</h3></div></td></tr>`;
 }
 
 // ============================================================
@@ -1739,7 +2001,7 @@ function renderErrores() {
 // ============================================================
 function exportarCSV() {
   const data = getFiltered();
-  const headers=['Fecha','N° Guía','Patente','Origen','Destino','Conductor','Prevencionista','T_Recepcion','T_Revision','T_Prevencion','T_Sellado','Min_F1','Min_F2','Min_F3','Min_Total','Err_Revision','Err_Sellado','Estado'];
+  const headers=['Fecha','N° Guía','Patente','Origen','Destino','Conductor','Prevencionista','T_Recepcion','T_Revision','T_Prevencion','T_Sellado','Min_F1','Min_F2','Min_F3','Min_Total','Err_Revision','Err_Sellado','Obs_Operacional','Estado'];
   const rows=data.map(g=>[
     g.fecha,g.guia,g.patente,g.origen,g.bultos||'',g.conductor,g.receptor,
     fmtDateTime(g.t_recepcion),fmtDateTime(g.t_revision),fmtDateTime(g.t_prevencion),fmtDateTime(g.t_sellado),
@@ -1749,6 +2011,7 @@ function exportarCSV() {
     g.t_sellado?(elapsedMs(g.t_recepcion,g.t_sellado)/60000).toFixed(1):'',
     (g.errores_revision||[]).length,
     (g.errores_sellado||[]).length,
+    (g.observaciones_operacionales||[]).length,
     estadoLabel(g)
   ]);
   const csv=[headers,...rows].map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
@@ -1789,6 +2052,12 @@ setInterval(()=>{
   document.getElementById('fe-desde').value=hace30.toISOString().split('T')[0];
   renderTablaHoy();
   updateSyncIndicator();
+
+  // Si ya hay una planilla conectada, traer automáticamente los registros
+  // hechos desde OTROS dispositivos (PC, celular, etc.) al abrir la app
+  if (getSyncUrl()) {
+    descargarDeSheets(true);
+  }
 })();
 
 // ============================================================
@@ -1825,8 +2094,8 @@ function checkSLAAlerts() {
   const panel = buildAlertPanel();
   const WARN_SECS = 5 * 60; // alert 5 minutes before breach
 
-  // Active (unsealed) guides
-  const activos = db.guias.filter(g => !g.t_sellado);
+  // Active (unsealed, not closed) guides
+  const activos = db.guias.filter(g => !g.t_sellado && !g.cerrada);
   const toAlert  = activos.filter(g => {
     const secsLeft = slaSecondsLeft(g);
     return secsLeft <= WARN_SECS; // 5 min or less remaining (includes overdue)
@@ -1859,21 +2128,34 @@ function checkSLAAlerts() {
       card = document.createElement('div');
       card.className = 'sla-alert-card' + (critical ? ' critical' : '');
       card.dataset.id = g.id;
+      card.dataset.critical = critical ? '1' : '0';
       card.innerHTML = buildAlertCardHTML(g, timerLabel, timerClass, critical, overdue);
       panel.appendChild(card);
       // Sound nudge (beep via Web Audio if available)
       playSLABeep(overdue);
     } else {
-      // Just update timer + state
-      card.className = 'sla-alert-card' + (critical ? ' critical' : '');
+      // Solo tocar la clase (y por tanto reiniciar animación) si el estado crítico realmente cambió
+      const wasCritical = card.dataset.critical === '1';
+      if (wasCritical !== critical) {
+        card.className = 'sla-alert-card' + (critical ? ' critical' : '');
+        card.dataset.critical = critical ? '1' : '0';
+      }
       const timerEl = card.querySelector('.sla-alert-timer');
-      if (timerEl) { timerEl.className = 'sla-alert-timer ' + timerClass; timerEl.textContent = timerLabel; }
+      if (timerEl) {
+        if (!timerEl.classList.contains(timerClass) && timerClass) {
+          timerEl.className = 'sla-alert-timer ' + timerClass;
+        } else if (!timerClass) {
+          timerEl.className = 'sla-alert-timer';
+        }
+        timerEl.textContent = timerLabel;
+      }
       const titleEl = card.querySelector('.sla-alert-title');
-      if (titleEl) titleEl.textContent = overdue ? '🚨 SLA VENCIDA' : '⚠️ SLA próxima a vencer';
+      const newTitle = overdue ? '🚨 SLA VENCIDA' : '⚠️ SLA próxima a vencer';
+      if (titleEl && titleEl.textContent !== newTitle) titleEl.textContent = newTitle;
     }
   });
 
-  // Nav badge
+  // Nav badge — solo actualizar el DOM si el conteo realmente cambió
   updateNavBadge(navCount);
 }
 
@@ -1903,7 +2185,9 @@ function dismissSLAAlert(id) {
     card.style.opacity = '0';
     setTimeout(() => card.remove(), 300);
   }
-  updateNavBadge(document.querySelectorAll('.sla-alert-card').length - 1);
+  const remaining = document.querySelectorAll('.sla-alert-card').length - 1;
+  _lastNavBadgeCount = -1; // forzar refresco aunque el número coincida
+  updateNavBadge(Math.max(remaining, 0));
 }
 
 function irAGuia(id) {
@@ -1911,7 +2195,10 @@ function irAGuia(id) {
   setTimeout(() => openGuia(id), 100);
 }
 
+let _lastNavBadgeCount = -1;
 function updateNavBadge(count) {
+  if (count === _lastNavBadgeCount) return; // sin cambios -> no tocar el DOM, evita parpadeo
+  _lastNavBadgeCount = count;
   document.querySelectorAll('.sla-nav-badge').forEach(b => b.remove());
   if (count > 0) {
     document.querySelectorAll('.nav-tab').forEach(t => {
